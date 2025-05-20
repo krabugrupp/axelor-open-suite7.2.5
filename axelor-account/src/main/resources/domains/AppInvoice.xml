@@ -18,6 +18,7 @@
       title="Auto generate invoice printing file on sale invoice"/>
     <boolean name="autoGenerateInvoicePrintingFileOnPurchaseInvoice" default="false"
       title="Auto generate invoice printing file on purchase invoice"/>
+    <string name="urlImportSupplierInvoices" title="URL to external application for importing supplier invoices"/>
 
     <track>
       <field name="isVentilationSkipped" on="UPDATE"/>
