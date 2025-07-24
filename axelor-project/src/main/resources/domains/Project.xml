@@ -28,7 +28,10 @@
       ref="com.axelor.apps.project.db.ResourceBooking" title="Resource booking" mappedBy="project"/>
 
     <one-to-many name="taskCustomFieldsList" ref="com.axelor.meta.db.MetaJsonField"
-      title="Task fields" mappedBy="project"/>
+      title="Task fields" orphanRemoval="true"/>
+
+    <one-to-many name="projectHoldBackLineList"
+      ref="com.axelor.apps.project.db.ProjectHoldBackLine"/>
 
     <string name="code" title="Code" unique="true"/>
     <many-to-many name="membersUserSet" ref="com.axelor.auth.db.User" title="Membres"/>
@@ -44,6 +47,9 @@
 
     <decimal name="sequence" title="Sequence"/>
     <integer name="orderByState"/>
+
+    <boolean name="imputable" title="Imputable to HR timesheets" default="true"
+      massUpdate="true"/>
 
     <many-to-many name="finishToStartTaskSet" ref="com.axelor.apps.project.db.Project"
       title="Finish tasks to start"/>
@@ -74,15 +80,13 @@
     <many-to-many name="siteSet" title="Sites" ref="com.axelor.apps.base.db.Site"/>
 
     <!-- Configuration fields -->
-    <integer name="taskStatusManagementSelect" title="Task status management" default="2"
-      selection="task.project.status.management.select"
-      help="The status of project tasks will be defined by the selection chosen. The priority of the statuses displayed is determined first by the category, then by the project. Once a task is linked to the project, the selection can no longer be modified."/>
+    <boolean name="isShowStatus" title="Status?" default="false"/>
     <many-to-many name="projectTaskStatusSet"
       ref="com.axelor.apps.project.db.TaskStatus" title="Type of authorized status"/>
-    <boolean name="isShowPriority" title="Priorities?" default="true"/>
+    <boolean name="isShowPriority" title="Priorities?" default="false"/>
     <many-to-many name="projectTaskPrioritySet"
       ref="com.axelor.apps.project.db.ProjectPriority" title="Type of authorized priorities"/>
-    <boolean name="isShowTaskCategory" title="Categories?" default="true"/>
+    <boolean name="isShowTaskCategory" title="Categories?" default="false"/>
     <many-to-many name="projectTaskCategorySet"
       ref="com.axelor.apps.project.db.ProjectTaskCategory" title="Type of authorized categories"/>
     <boolean name="isShowProgress" title="Task progress" default="true"

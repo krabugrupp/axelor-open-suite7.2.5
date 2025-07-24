@@ -216,6 +216,7 @@
   <grid name="invoice-supplier-grid" title="Invoices"
     model="com.axelor.apps.account.db.Invoice" orderBy="-invoiceDate">
     <toolbar>
+      <button name="supplierImport" icon="fa-rocket" title="Import supplier invoices" onClick="action-view-supplier-import" if="__config__.app.getApp('invoice').getUrlImportSupplierInvoices()"/>
       <button name="printBtn" title="Print invoices"
         onClick="action-invoice-method-show-invoice" icon="fa-print"/>
     </toolbar>
@@ -402,12 +403,19 @@
     <toolbar>
       <button name="printBtn" title="Reports" icon="fa-print" showIf="statusSelect != 4"
         readonlyIf="!id" onClick="action-invoice-group-report-button"/>
+
     </toolbar>
 
     <menubar>
       <menu name="invoiceToolsMenu" title="Tools" icon="fa-wrench" showTitle="true">
         <item name="sendEmailItem" title="Send email"
           action="save,action-send-by-email-with-template" readonlyIf="partner == null"/>
+        <item title="Check whether partner accepts e-invoices"
+          action="save,action-check-partner-accept-einvoice" readonlyIf="partner == null"/>
+        <item title="Send invoice to e-arve" action="save,action-send-electronic-invoice"
+          readonlyIf="statusSelect != 3" prompt="Send electronic invoice?"/>
+        <item title="Mark invoice as sent" action="save,action-mark-as-sent"
+          readonlyIf="(statusSelect != 3) || (sentEmailDate != null)"/>
       </menu>
     </menubar>
 
@@ -421,7 +429,7 @@
       </panel>
       <panel name="viewerTagsPanel" colSpan="5">
         <field name="$viewerTags" showTitle="false" readonly="true" showIf="$readonly()"
-          colSpan="9" depends="partner.factorizedCustomer">
+          colSpan="9" depends="partner.factorizedCustomer,sentEmailDate,sentEinvoiceDate">
           <viewer>
 	                    <![CDATA[
 	                        <>
@@ -443,6 +451,10 @@
 	                        		{operationSubTypeSelect == 9 && operationTypeSelect == 3 && <Badge bg="info">{_t('Late payment interest invoice')}</Badge>}
 
 	                        		{(operationTypeSelect == 3 || operationTypeSelect == 4) && partner.factorizedCustomer && <Badge bg="info">{_t('Factorized customer')}</Badge>}
+
+                                    {sentEmailDate  && <Badge bg="info">{_t(`Email sent on ${new Date(sentEmailDate).toLocaleDateString("ru-RU")}`)}</Badge> }
+                                    {sentEinvoiceDate  && <Badge bg="info">{_t(`e-Invoice sent on ${new Date(sentEinvoiceDate).toLocaleDateString("ru-RU")}`)}</Badge> }
+
 	                        	</Box>
 	                        </>
 	                    ]]>
@@ -2135,7 +2147,7 @@
 
   <action-attrs name="action-invoice-attrs-hide-cancel-button">
     <attribute name="hidden" for="cancelBtn"
-      expr="((operationSubTypeSelect == 2) &amp;&amp; statusSelect == 2) || statusSelect == 4 || statusSelect == 3"/>
+      expr="(operationSubTypeSelect == 2 &amp;&amp; statusSelect == 2) || statusSelect == 4 || (statusSelect == 3 &amp;&amp; !company?.accountConfig?.allowCancelVentilatedInvoice)"/>
   </action-attrs>
 
   <action-attrs name="action-set-partner-domain">
@@ -2303,6 +2315,17 @@
   </action-validate>
 
   <!-- ACTION METHOD -->
+  <action-method name="action-check-partner-accept-einvoice">
+    <call class="com.axelor.apps.account.einvoice.Controller" method="check"/>
+  </action-method>
+
+  <action-method name="action-send-electronic-invoice">
+    <call class="com.axelor.apps.account.einvoice.Controller" method="send"/>
+  </action-method>
+
+  <action-method name="action-mark-as-sent">
+    <call class="com.axelor.apps.account.einvoice.Controller" method="markAsSent"/>
+  </action-method>
 
   <action-method name="action-invoice-method-bank-details-from-partner-domain">
     <call class="com.axelor.apps.account.web.InvoiceController" method="setBankDetailsDomain"/>
@@ -2464,6 +2487,13 @@
       method="checkNotLetteredAdvancePaymentMoveLines"/>
   </action-method>
 
+  <action-method name="action-invoice-ftp-export">
+    <call class="com.axelor.apps.account.web.InvoiceFtpExport" method="invoiceExport"/>
+  </action-method>
+
+  <action-view name="action-view-supplier-import" title="Import supplier invoices">
+    <view type="html" name="eval: __config__.app.getApp('invoice').getUrlImportSupplierInvoices()"/>
+  </action-view>
   <action-method name="action-invoice-method-check-partner-bank-details-list">
     <call class="com.axelor.apps.account.web.InvoiceController"
       method="checkPartnerBankDetailsList"/>

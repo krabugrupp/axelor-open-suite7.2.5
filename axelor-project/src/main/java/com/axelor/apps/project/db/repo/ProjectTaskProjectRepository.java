@@ -140,7 +140,7 @@ public class ProjectTaskProjectRepository extends ProjectTaskRepository {
           json.put("taskDuration", durationHours.multiply(new BigDecimal(3600)).intValue());
         }
       } else if (json.get("taskDuration") != null) {
-        Integer taskDuration = new Integer(json.get("taskDuration").toString());
+        Integer taskDuration = Integer.valueOf(json.get("taskDuration").toString());
         logger.debug("Updating durationHours: {}", taskDuration / 3600);
         json.put("durationHours", new BigDecimal(taskDuration / 3600));
       }
@@ -152,7 +152,7 @@ public class ProjectTaskProjectRepository extends ProjectTaskRepository {
         json.put("plannedProgress", progress);
       }
       if (json.get("taskDuration") != null) {
-        Integer taskDuration = new Integer(json.get("taskDuration").toString());
+        Integer taskDuration = Integer.valueOf((json.get("taskDuration").toString()));
         json.put("durationHours", new BigDecimal(taskDuration / 3600));
       }
     }

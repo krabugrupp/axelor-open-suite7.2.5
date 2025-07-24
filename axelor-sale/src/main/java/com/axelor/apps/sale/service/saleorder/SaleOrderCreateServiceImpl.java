@@ -27,11 +27,14 @@ import com.axelor.apps.base.db.Partner;
 import com.axelor.apps.base.db.PriceList;
 import com.axelor.apps.base.db.TradingName;
 import com.axelor.apps.base.db.repo.PriceListRepository;
+import com.axelor.apps.base.service.DMSService;
 import com.axelor.apps.base.service.PartnerPriceListService;
 import com.axelor.apps.base.service.PartnerService;
 import com.axelor.apps.base.service.TradingNameService;
+import com.axelor.apps.base.service.address.AddressService;
 import com.axelor.apps.sale.db.SaleOrder;
 import com.axelor.apps.sale.db.SaleOrderLine;
+import com.axelor.apps.sale.db.repo.SaleOrderLineRepository;
 import com.axelor.apps.sale.db.repo.SaleOrderRepository;
 import com.axelor.apps.sale.service.app.AppSaleService;
 import com.axelor.apps.sale.service.saleorderline.SaleOrderLineComputeService;
@@ -59,10 +62,12 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
   protected AppSaleService appSaleService;
   protected SaleOrderService saleOrderService;
   protected SaleOrderComputeService saleOrderComputeService;
+  protected DMSService dmsService;
   protected SaleOrderLineComputeService saleOrderLineComputeService;
   protected SaleOrderLineProductService saleOrderLineProductService;
   protected SaleOrderLinePriceService saleOrderLinePriceService;
   protected SaleOrderDateService saleOrderDateService;
+  protected SaleOrderLineRepository saleOrderLineRepository;
 
   @Inject
   public SaleOrderCreateServiceImpl(
@@ -121,6 +126,11 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
     saleOrder.setInternalNote(internalNote);
     saleOrder.setTradingName(tradingName);
     return saleOrder;
+  }
+
+  @Override
+  public SaleOrder createSaleOrder(User salespersonUser, Company company, Partner contactPartner, Currency currency, LocalDate estimatedShippingDate, String internalReference, String externalReference, PriceList priceList, Partner clientPartner, Team team, TaxNumber taxNumber, FiscalPosition fiscalPosition) throws AxelorException {
+    return SaleOrderCreateService.super.createSaleOrder(salespersonUser, company, contactPartner, currency, estimatedShippingDate, internalReference, externalReference, priceList, clientPartner, team, taxNumber, fiscalPosition);
   }
 
   @Override
@@ -194,6 +204,11 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
     saleOrderDateService.computeEndOfValidityDate(saleOrder);
 
     return saleOrder;
+  }
+
+  @Override
+  public SaleOrder createSaleOrder(Company company, Partner clientPartner) throws AxelorException {
+    return null;
   }
 
   @Override

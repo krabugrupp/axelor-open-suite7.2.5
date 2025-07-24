@@ -20,15 +20,20 @@ package com.axelor.apps.businessproject.service;
 
 import com.axelor.apps.account.db.Invoice;
 import com.axelor.apps.account.db.repo.InvoiceRepository;
+import com.axelor.apps.account.service.accountingsituation.AccountingSituationService;
 import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.db.Company;
 import com.axelor.apps.base.db.Currency;
 import com.axelor.apps.base.db.Partner;
 import com.axelor.apps.base.db.Unit;
+import com.axelor.apps.base.db.repo.CompanyRepository;
+import com.axelor.apps.base.db.repo.PriceListRepository;
 import com.axelor.apps.base.db.repo.TraceBackRepository;
+import com.axelor.apps.base.service.PartnerPriceListService;
 import com.axelor.apps.base.service.PartnerService;
 import com.axelor.apps.base.service.address.AddressService;
 import com.axelor.apps.base.service.app.AppBaseService;
+import com.axelor.apps.businessproject.exception.BusinessProjectExceptionMessage;
 import com.axelor.apps.businessproject.service.app.AppBusinessProjectService;
 import com.axelor.apps.businessproject.service.projecttask.ProjectTaskBusinessProjectService;
 import com.axelor.apps.businessproject.service.projecttask.ProjectTaskReportingValuesComputingService;
@@ -40,6 +45,7 @@ import com.axelor.apps.project.db.ProjectTemplate;
 import com.axelor.apps.project.db.repo.ProjectRepository;
 import com.axelor.apps.project.db.repo.ProjectStatusRepository;
 import com.axelor.apps.project.db.repo.WikiRepository;
+import com.axelor.apps.project.db.repo.ProjectTemplateRepository;
 import com.axelor.apps.project.exception.ProjectExceptionMessage;
 import com.axelor.apps.project.service.ProjectCreateTaskService;
 import com.axelor.apps.project.service.ProjectNameComputeService;
@@ -58,6 +64,7 @@ import com.axelor.common.ObjectUtils;
 import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
 import com.axelor.meta.schema.actions.ActionView;
+import com.axelor.studio.db.AppSupplychain;
 import com.axelor.utils.helpers.date.LocalDateHelper;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
@@ -139,7 +146,7 @@ public class ProjectBusinessServiceImpl extends ProjectServiceImpl
   public SaleOrder generateQuotation(Project project) throws AxelorException {
 
     Partner clientPartner = project.getClientPartner();
-    Partner contactPartner = project.getContactPartner();
+       Partner contactPartner = project.getContactPartner();
     if (contactPartner == null && clientPartner.getContactPartnerSet().size() == 1) {
       contactPartner = clientPartner.getContactPartnerSet().iterator().next();
     }
@@ -549,6 +556,20 @@ public class ProjectBusinessServiceImpl extends ProjectServiceImpl
     return date.getMonthValue() == 12 && date.getYear() == today.getYear() - 1;
   }
 
+  protected BigDecimal getConvertedTime(
+      BigDecimal duration, Unit fromUnit, Unit toUnit, BigDecimal numberHoursADay)
+      throws AxelorException {
+    if (appBusinessProjectService.getDaysUnit().equals(fromUnit)
+        && appBusinessProjectService.getHoursUnit().equals(toUnit)) {
+      return duration.multiply(numberHoursADay);
+    } else if (appBusinessProjectService.getHoursUnit().equals(fromUnit)
+        && appBusinessProjectService.getDaysUnit().equals(toUnit)) {
+      return duration.divide(numberHoursADay, BIG_DECIMAL_SCALE, RoundingMode.HALF_UP);
+    } else {
+      return duration;
+    }
+  }
+
   @Transactional(rollbackOn = {Exception.class})
   @Override
   public void backupToProjectHistory(Project project) {
@@ -600,6 +621,7 @@ public class ProjectBusinessServiceImpl extends ProjectServiceImpl
     projectHistoryLine.setInvoicedThisMonth(project.getInvoicedThisMonth());
     projectHistoryLine.setInvoicedLastMonth(project.getInvoicedLastMonth());
     projectHistoryLine.setTotalPaid(project.getTotalPaid());
+
   }
 
   @Override

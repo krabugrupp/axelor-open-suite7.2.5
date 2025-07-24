@@ -452,6 +452,9 @@
     <option value="com.axelor.apps.base.job.MailJob">com.axelor.apps.base.job.MailJob</option>
     <option value="com.axelor.apps.base.job.BatchJob">com.axelor.apps.base.job.BatchJob</option>
     <option value="com.axelor.apps.base.job.CurrencyConversionJob">com.axelor.apps.base.job.CurrencyConversionJob</option>
+    <option value="com.axelor.apps.base.job.BusinessRegistryImportJob">com.axelor.apps.base.job.BusinessRegistryImportJob</option>
+    <option value="com.axelor.apps.base.job.EmtaRegistryImportJob">com.axelor.apps.base.job.EmtaRegistryImportJob</option>
+    <option value="com.axelor.apps.base.job.PartnerTurnoverUpdateJob">com.axelor.apps.base.job.PartnerTurnoverUpdateJob</option>
   </selection>
 
   <selection name="meta.schedule.batch.service.select"
@@ -630,6 +633,12 @@
     <option value="1">In Progress</option>
     <option value="2">Completed</option>
     <option value="3">Error</option>
+  </selection>
+
+  <selection name="base.partner.type.select">
+    <option value="1">Select partner type</option>
+    <option value="2">Supplier</option>
+    <option value="3">Customer</option>
   </selection>
 
   <selection name="user.partner.type.select">

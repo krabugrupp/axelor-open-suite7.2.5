@@ -51,7 +51,7 @@ public class ICalendarEventController {
       if (guestEmail != null) {
         EmailAddress emailAddress =
             Beans.get(EmailAddressRepository.class)
-                .find(new Long((guestEmail.get("id").toString())));
+                .find(Long.valueOf((guestEmail.get("id").toString())));
         if (emailAddress != null) {
           response.setValue(
               "attendees",

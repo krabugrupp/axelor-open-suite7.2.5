@@ -78,6 +78,7 @@ public class SequenceService {
   protected static final String PATTERN_YEAR = "%YY";
   protected static final String PATTERN_MONTH = "%M";
   protected static final String PATTERN_FULL_MONTH = "%FM";
+  protected static final String PATTERN_FULL_DAY = "%FD";
   protected static final String PATTERN_DAY = "%D";
   protected static final String PATTERN_WEEK = "%WY";
   protected static final String PADDING_LETTER = "A";
@@ -239,6 +240,7 @@ public class SequenceService {
             .replace(PATTERN_YEAR, refDate.format(DateTimeFormatter.ofPattern("yy")))
             .replace(PATTERN_MONTH, Integer.toString(refDate.getMonthValue()))
             .replace(PATTERN_FULL_MONTH, refDate.format(DateTimeFormatter.ofPattern("MM")))
+            .replaceAll(PATTERN_FULL_DAY, refDate.format(DateTimeFormatter.ofPattern("dd")))
             .replace(PATTERN_DAY, Integer.toString(refDate.getDayOfMonth()))
             .replace(
                 PATTERN_WEEK, Integer.toString(refDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)));
@@ -615,6 +617,7 @@ public class SequenceService {
             .replace(PATTERN_YEAR, refDate.format(DateTimeFormatter.ofPattern("yy")))
             .replace(PATTERN_MONTH, Integer.toString(refDate.getMonthValue()))
             .replace(PATTERN_FULL_MONTH, refDate.format(DateTimeFormatter.ofPattern("MM")))
+            .replace(PATTERN_FULL_DAY, refDate.format(DateTimeFormatter.ofPattern("dd")))
             .replace(PATTERN_DAY, Integer.toString(refDate.getDayOfMonth()))
             .replace(
                 PATTERN_WEEK, Integer.toString(refDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)));

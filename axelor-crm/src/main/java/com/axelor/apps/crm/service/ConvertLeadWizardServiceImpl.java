@@ -26,6 +26,7 @@ import com.axelor.apps.base.db.repo.CountryRepository;
 import com.axelor.apps.base.db.repo.PartnerRepository;
 import com.axelor.apps.base.db.repo.TraceBackRepository;
 import com.axelor.apps.base.service.PartnerService;
+import com.axelor.apps.base.service.address.AddressTemplateService;
 import com.axelor.apps.base.service.app.AppBaseService;
 import com.axelor.apps.base.service.wizard.BaseConvertLeadWizardService;
 import com.axelor.apps.base.service.wizard.ConvertWizardService;
@@ -54,6 +55,7 @@ import java.util.Optional;
 
 public class ConvertLeadWizardServiceImpl implements ConvertLeadWizardService {
 
+  private final AddressTemplateService addressTemplateService;
   protected LeadService leadService;
 
   protected ConvertWizardService convertWizardService;
@@ -82,7 +84,8 @@ public class ConvertLeadWizardServiceImpl implements ConvertLeadWizardService {
       AppCrmService appCrmService,
       MultiRelatedRepository multiRelatedRepository,
       ConvertWizardOpportunityService convertWizardOpportunityService,
-      PartnerRepository partnerRepository) {
+      PartnerRepository partnerRepository,
+      AddressTemplateService addressTemplateService) {
     this.leadService = leadService;
     this.convertWizardService = convertWizardService;
     this.partnerService = partnerService;
@@ -92,6 +95,7 @@ public class ConvertLeadWizardServiceImpl implements ConvertLeadWizardService {
     this.multiRelatedRepository = multiRelatedRepository;
     this.convertWizardOpportunityService = convertWizardOpportunityService;
     this.partnerRepository = partnerRepository;
+    this.addressTemplateService = addressTemplateService;
   }
 
   /**

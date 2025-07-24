@@ -59,6 +59,8 @@ libs.google_api_services_people = dependencies.create('com.google.apis:google-ap
   exclude group: 'com.google.guava', module: 'guava-jdk5'
 }
 
+libs.jaxws_api = 'javax.xml.ws:jaxws-api:2.3.1'
+
 libs.mockito = 'org.mockito:mockito-core:4.8.0'
 
 libs.pac4j_core = "org.pac4j:pac4j-core:5.7.7"
@@ -75,4 +77,5 @@ libs.logback = 'ch.qos.logback:logback-classic:1.4.5'
 
 libs.swagger_jaxrs = 'io.swagger.core.v3:swagger-jaxrs2:2.2.26'
 
+libs.boxable = 'com.github.dhorions:boxable:1.7.0'
 libs.flyingsaucer_openpdf = 'org.xhtmlrenderer:flying-saucer-pdf-openpdf:9.2.2'

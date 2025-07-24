@@ -84,6 +84,7 @@ import com.axelor.rpc.ActionRequest;
 import com.axelor.rpc.ActionResponse;
 import com.axelor.rpc.Context;
 import com.axelor.utils.db.Wizard;
+import com.axelor.utils.helpers.StringHelper;
 import com.google.common.base.Function;
 import com.google.inject.Singleton;
 import java.lang.invoke.MethodHandles;
@@ -239,6 +240,16 @@ public class InvoiceController {
 
     Invoice invoice = request.getContext().asType(Invoice.class);
     invoice = Beans.get(InvoiceRepository.class).find(invoice.getId());
+
+    if (invoice.getStatusSelect() == InvoiceRepository.STATUS_VENTILATED
+        && invoice.getCompany().getAccountConfig() != null
+        && !invoice.getCompany().getAccountConfig().getAllowCancelVentilatedInvoice()) {
+      response.setError(
+          I18n.get(
+              AccountExceptionMessage
+                  .INVOICE_CAN_NOT_GO_BACK_TO_VALIDATE_STATUS_OR_CANCEL_VENTILATED_INVOICE));
+      return;
+    }
 
     Beans.get(InvoiceService.class).cancel(invoice);
     response.setInfo(I18n.get(AccountExceptionMessage.INVOICE_1));
@@ -492,7 +503,15 @@ public class InvoiceController {
                     .getCode()
                 : null;
 
-        PrintingTemplate invoicePrintTemplate = getPrintingTemplate(context, invoice);
+        PrintingTemplate invoicePrintTemplate = null;
+        if (context.get("invoicePrintTemplate") != null) {
+          invoicePrintTemplate =
+              Mapper.toBean(
+                  PrintingTemplate.class,
+                  (Map<String, Object>) context.get("invoicePrintTemplate"));
+          invoicePrintTemplate =
+              Beans.get(PrintingTemplateRepository.class).find(invoicePrintTemplate.getId());
+        }
 
         fileLink =
             Beans.get(InvoicePrintService.class)
@@ -1370,8 +1389,9 @@ public class InvoiceController {
   protected Map<String, Object> getParamsMap(ActionRequest request) {
     Context context = request.getContext();
     Map<String, Object> params = new HashMap<>();
-    Object invoiceId = Optional.ofNullable(context.get("_invoiceId")).orElse(context.get("id"));
-    Invoice invoice = Beans.get(InvoiceRepository.class).find(Long.parseLong(invoiceId.toString()));
+    Invoice invoice =
+        Beans.get(InvoiceRepository.class)
+            .find(Long.parseLong(context.get("_invoiceId").toString()));
     Integer reportType =
         context.get("reportType") != null
             ? Integer.parseInt(context.get("reportType").toString())

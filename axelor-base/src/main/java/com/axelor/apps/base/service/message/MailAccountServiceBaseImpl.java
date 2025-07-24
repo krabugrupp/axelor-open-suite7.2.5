@@ -149,6 +149,8 @@ public class MailAccountServiceBaseImpl extends MailAccountServiceImpl {
               .fetchOne();
     }
 
+    System.out.println(
+        emailAccount == null ? "STMP EMAIL ACCOUNT IS NULL" : emailAccount.toString());
     return emailAccount;
   }
 

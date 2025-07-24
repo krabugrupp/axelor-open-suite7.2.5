@@ -86,7 +86,7 @@
     <one-to-many name="invoiceLineList" ref="InvoiceLine" mappedBy="invoice"
       title="Invoice Lines"/>
     <one-to-many name="invoiceLineTaxList" ref="InvoiceLineTax" mappedBy="invoice"
-      title="Tax Lines"/>
+      title="Tax Lines" readonly="true"/>
 
     <!-- Configuration -->
     <boolean name="alreadyPrintedOk" title="Already printed" default="true"/>
@@ -229,6 +229,9 @@
 
     <string name="headOfficeAddress" title="Head office address"/>
 
+    <date name="sentEmailDate" title="sent Email"/>
+    <date name="sentEinvoiceDate" title="sent Electronic invoice"/>
+
     <boolean name="displayStockMoveOnInvoicePrinting" title="Display Deliveries on printing"
       default="false"/>
 
@@ -365,6 +368,8 @@
       <field name="pfpValidateStatusSelect" on="UPDATE"/>
       <field name="reasonOfRefusalToPay" on="UPDATE"/>
       <field name="reasonOfRefusalToPayStr" on="UPDATE"/>
+      <field name="sentEmailDate" on="UPDATE"/>
+      <field name="sentEinvoiceDate" on="UPDATE"/>
       <field name="companyTaxNumber" on="UPDATE"/>
       <message if="true" on="CREATE">Invoice created</message>
       <message if="statusSelect == 2" tag="important">Validated</message>

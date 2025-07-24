@@ -18,9 +18,11 @@
  */
 package com.axelor.apps.purchase.service;
 
+import com.axelor.apps.base.service.exception.TraceBackService;
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.service.app.AppBaseService;
-import com.axelor.apps.base.service.exception.TraceBackService;
+import com.axelor.apps.purchase.db.PurchaseOrder;
 import com.axelor.apps.purchase.db.PurchaseOrderLine;
 import com.axelor.apps.purchase.db.repo.PurchaseOrderLineRepository;
 import com.axelor.inject.Beans;

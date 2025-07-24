@@ -130,7 +130,7 @@ public class ExcelToCSV {
                     break;
 
                   case Cell.CELL_TYPE_BOOLEAN:
-                    value = new Boolean(dataCell.getBooleanCellValue()).toString();
+                    value = Boolean.valueOf(dataCell.getBooleanCellValue()).toString();
                     break;
                   case Cell.CELL_TYPE_BLANK:
                   default:

@@ -331,55 +331,31 @@ from InvoiceTerm as self
     <field name="_company" expr="eval:__repo__(User).find(__user__.id)?.activeCompany"/>
   </action-record>
 
-  <chart name="chart.account.invoice.summary" title="Account Invoice Summary">
-    <dataset type="sql">
-		    <![CDATA[
-			SELECT
-				coalesce(SUM(_invoice._total),0.00) AS _amount,
-				_meta._type AS _invoice_type
-			FROM
-				(SELECT company_in_tax_total_remaining AS _total, operation_type_select FROM account_invoice WHERE status_select=3) AS _invoice
-			RIGHT JOIN
-				(SELECT cast(value as int) AS _select_item, title AS _type
-				FROM meta_select_item
-				WHERE select_id IN
-				(SELECT id FROM meta_select where name='iinvoice.operation.type.select')) AS _meta
-			ON	_invoice.operation_type_select = _meta._select_item
-			GROUP BY
-				_meta._type
-			ORDER BY
-				_meta._type
-    	    ]]>
-    </dataset>
-    <category key="_invoice_type" type="text" title="Invoice"/>
-    <series key="_amount" type="bar" title="Amount"/>
+  <chart name="chart.account.invoice.summary" title="Account Invoice Summary"
+    onInit="select.default.invoice.category">
+    <search-fields>
+      <field title="Operation" type="string" name="operation"
+        selection="select.invoice.type.revenue.cost" x-required="true"/>
+      <field name="companyCode" title="Company" type="string"
+        selection="select.invoice.company.code" x-required="true"
+        hideIf="operation == 'EBITDA' || operation == 'WORKFORCE_COST'"/>
+    </search-fields>
+
+    <dataset type="rpc">com.axelor.apps.account.web.AccountInvoiceSummaryChartController:calculate</dataset>
+    <category key="monthNo" type="month" title="Month"/>
+    <series key="turnOver" type="line" groupBy="year" title="Amount"/>
   </chart>
 
+
   <chart name="chart.invoiced.turnover.ytd.vs.lastyear"
-    title="Invoiced Turnover This year vs Last year">
-    <dataset type="sql">
-	    <![CDATA[
-			SELECT
-				SUM(CASE _invoice.operation_type_select
-						WHEN 3 THEN _invoice.ex_tax_total
-						WHEN 4 THEN -_invoice.ex_tax_total
-						END) AS _turn_over,
-				DATE_PART('year',_invoice.invoice_date) AS _year
-			FROM
-				account_invoice AS _invoice
-			WHERE
-				_invoice.status_select = 3
-				AND (_invoice.operation_type_select=3 OR _invoice.operation_type_select=4)
-				AND DATE_PART('year',_invoice.invoice_date)
-				IN (DATE_PART('year',CURRENT_DATE) - 1, DATE_PART('year',CURRENT_DATE) )
-			GROUP BY
-				_year
-			ORDER BY
-				_year
-	    ]]>
-    </dataset>
-    <category key="_year" type="text" title="Year"/>
-    <series key="_turn_over" type="bar" title="TurnOver"/>
+    title="Invoiced Turnover This year vs Last year" onInit="select.default.invoice.type.revenue">
+    <search-fields>
+      <field type="string" name="operation" title="Revenue vs Cost"
+        selection="select.invoice.type.revenue.cost" x-required="true"/>
+    </search-fields>
+    <dataset type="rpc">com.axelor.apps.account.web.InvoicedTurnoverThisVsLastYearChartController:calculate</dataset>
+    <category key="year" type="text" title="Year"/>
+    <series key="turnOver" type="bar" title="TurnOver"/>
   </chart>
 
   <chart stacked="true" name="chart.invoice.turnover.cust.history"
@@ -499,6 +475,47 @@ from InvoiceTerm as self
     <config name="xFormat" value="MM-YYYY"/>
   </chart>
 
+  <chart stacked="false" name="chart.invoice.prod.qty.sold.history.year" title="Top customers by year"
+         onInit="select.default.five.years.top.company">
+    <search-fields>
+      <field type="string" name="year" title="Year" selection="select.translation.five.years" x-required="true"/>
+      <field name="companyCode" title="Category" type="string"
+             selection="select.invoice.top.company.category.code" x-required="true"/>
+    </search-fields>
+    <dataset type="sql">
+      <![CDATA[
+				select year, partner_name as name, _turn_over
+				from (
+						 select *, row_number() over (partition by year order by _turn_over desc) as rank
+						 from (
+								  select
+										 to_char(_invoice.invoice_date, 'yyyy') AS year,
+										 base_partner.name as partner_name,
+										 SUM(CASE operation_type_select
+												 WHEN 1 THEN -line.ex_tax_total -- Supplier purchase
+												 WHEN 2 THEN  line.ex_tax_total -- Supplier refund
+												 WHEN 3 THEN line.ex_tax_total -- Client sale
+												 WHEN 4 THEN -line.ex_tax_total -- Client refund
+											 END) as _turn_over
+								  from account_invoice as _invoice
+										   join base_partner base_partner on _invoice.partner = base_partner.id
+										   join account_invoice_line as line on _invoice.id = line.invoice
+										   join base_product as bp on line.product = bp.id
+										   join base_product_category as bpc on bp.product_category = bpc.id
+								  where status_select = 3	AND (_invoice.operation_type_select = 3 OR _invoice.operation_type_select = 4)
+									AND invoice_date BETWEEN to_date(:year\:\:text, 'YYYY') AND to_date(:year\:\:text, 'YYYY') + interval '1 year'
+									and case when :companyCode != 'ALL' then bpc.code = :companyCode else true end
+								  group by year, partner_name
+								  order by year, _turn_over desc
+							  ) t1
+					 ) t2
+				where rank <= 10;
+		]]>
+    </dataset>
+    <category key="year" type="text" title="Year"/>
+    <series key="_turn_over" groupBy="name" type="bar" title="No of Units" aggregate="sum"/>
+  </chart>
+
   <chart name="chart.invoice.total.revenue.by.product"
     title="Total Revenue Distribution by Product"
     onInit="action.account.chart.set.from.to.date.month">
@@ -539,6 +556,90 @@ from InvoiceTerm as self
     <series key="_revenue" type="donut" title="Revenue"/>
   </chart>
 
+
+  <chart name="chart.invoice.turnover.by.customer"
+    title="Business turnover research by customer" stacked="true"
+    onInit="select.default.partner.type">
+    <search-fields>
+      <field name="partnerFilter" title="Filter partners by"
+        selection="base.partner.type.select" x-required="true" x-type="long"/>
+      <field name="partner" type="reference" target="com.axelor.apps.base.db.Partner"
+        widget="many-to-one" title="Partner" x-required="true"
+        onSelect="action-supplier-cost-by-month-chart-partner-domain" if="partnerFilter == null || partnerFilter == 1"/>
+    </search-fields>
+
+    <dataset type="sql">
+      <![CDATA[
+                        SELECT to_char(invoice_date,'yyyy') AS _year_no,
+                   (CASE :partnerFilter
+                       -- When selected Suppliers then calculate cost
+                        when '2' then SUM(
+                                CASE account_invoice.operation_type_select
+                                    WHEN 1 THEN account_invoice.ex_tax_total -- Supplier purchase\n
+                                    WHEN 2 THEN -account_invoice.ex_tax_total -- Supplier refund\n
+                                    END)
+                       -- When selected Customer then calculate revenue
+                        when '3' then SUM(CASE account_invoice.operation_type_select
+                                              WHEN 3 THEN account_invoice.ex_tax_total -- Supplier purchase\n
+                                              WHEN 4 THEN -account_invoice.ex_tax_total -- Supplier refund\n
+                            END)
+                       end
+                       ) as _amount,
+                   base_company.name
+            FROM account_invoice
+                     JOIN base_company ON account_invoice.company = base_company.id
+            WHERE account_invoice.partner = CAST(:partner AS bigint)
+            GROUP BY _year_no, base_company.name;
+			]]>
+    </dataset>
+    <category key="_year_no" type="text" title="Year"/>
+    <series key="_amount" groupBy="name" type="bar" title="TurnOver" aggregate="sum"/>
+    <config name="xFormat" value="YYYY"/>
+    <config name="colors" value="red,green,blue"/>
+  </chart>
+
+  <action-attrs name="action-supplier-cost-by-month-chart-partner-domain">
+    <attribute if="partnerFilter == '2'" name="domain" expr="eval: &quot; self.partnerTypeSelect=1 and self.isSupplier = true &quot;" for="partner"/>
+    <attribute if="partnerFilter == '3'" name="domain" expr="eval: &quot; self.partnerTypeSelect=1 and self.isCustomer = true &quot;" for="partner"/>
+  </action-attrs>
+
+  <chart name="chart.supplier.cost.by.months" title="Partner cost by months" stacked="true" onInit="select.default.partner.type">
+    <search-fields>
+      <field name="partnerFilter" title="Filter partners by"
+        selection="base.partner.type.select" x-required="true" x-type="long"/>
+      <field name="partner" type="reference" target="com.axelor.apps.base.db.Partner"
+        widget="many-to-one" title="Partner" x-required="true"
+        onSelect="action-supplier-cost-by-month-chart-partner-domain" if="partnerFilter == null || partnerFilter == 1"/>
+    </search-fields>
+    <dataset type="sql">
+      <![CDATA[
+                select (CASE :partnerFilter
+                    -- When selected Suppliers then calculate cost
+                    when '2' then SUM(
+                            CASE Invoice.operation_type_select
+                                WHEN 1 THEN Invoice.ex_tax_total -- Supplier purchase\n
+                                WHEN 2 THEN -Invoice.ex_tax_total -- Supplier refund\n
+                                END)
+                    -- When selected Customer then calculate revenue
+                    when '3' then SUM(CASE Invoice.operation_type_select
+                                        WHEN 3 THEN Invoice.ex_tax_total -- Supplier purchase\n
+                                        WHEN 4 THEN -Invoice.ex_tax_total -- Supplier refund\n
+                        END)
+                    end
+                    ) as _amount,
+                       extract(year from Invoice.invoice_date) _year,
+                       extract(month from invoice_date) _month
+
+
+                from account_invoice Invoice
+                where partner =  CAST(:partner AS bigint)
+                group by _year, _month
+                order by _year, _month
+			]]>
+    </dataset>
+    <category key="_month" type="month" title="Month"/>
+    <series key="_amount" groupBy="_year" type="line" title="Cost"/>
+  </chart>
   <chart name="chart.total.revenue.by.geo.region" title="Reveue generated by country"
     onInit="action.account.chart.set.from.to.date.month">
     <search-fields>
@@ -760,8 +861,8 @@ from InvoiceTerm as self
 
   <action-record name="action.account.chart.set.from.to.date.month"
     model="com.axelor.apps.account.db.Account">
-    <field name="toDate" expr="eval:todayDate"/>
-    <field name="fromDate" expr="eval: LocalDate.parse(todayDate).minusYears(1)"/>
+    <field name="toDate" expr="eval: LocalDate.now()"/>
+    <field name="fromDate" expr="eval: LocalDate.now().minusYears(1)"/>
     <field name="monthSelect" expr="eval:12"/>
   </action-record>
 

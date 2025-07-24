@@ -95,7 +95,8 @@
     <many-to-one name="mainActivity" title="Main Activity"
       ref="com.axelor.apps.base.db.MainActivity"/>
     <string name="taxNbr" title="Tax N°"/>
-    <string name="siren" title="Short registration number"/>
+    <integer name="nbrEmployees" title="Employees (Nbr)" min="0"/>
+    <string name="siren" title="N° Siren"/>
     <string name="nic" title="Internal Classification Number"/>
     <many-to-many name="tradingNameSet" ref="com.axelor.apps.base.db.TradingName"
       title="Agencies"/>
@@ -108,6 +109,8 @@
       title="Fiscal position" massUpdate="true"/>
     <many-to-one name="mainAddress" ref="com.axelor.apps.base.db.Address"
       title="Address"/>
+
+    <string name="companyStr" title="Companies" large="true"/>
 
     <string name="headOfficeAddress" title="Head office address"/>
 
@@ -138,6 +141,7 @@
 
     <finder-method name="findByPartnerSeq" using="partnerSeq"/>
 
+    <finder-method name="findByRegistrationCode" using="registrationCode"/>
     <extra-code>
 	<![CDATA[
 		public static final int PARTNER_TYPE_COMPANY = 1;

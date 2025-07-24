@@ -193,6 +193,7 @@ public class InvoiceServiceImpl extends InvoiceRepository implements InvoiceServ
 
             populate(invoice, invoiceLines);
 
+            invoice.setSentEinvoiceDate(null);
             return invoice;
           }
         };

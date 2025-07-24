@@ -77,14 +77,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.inject.Singleton;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Singleton
 public class MailServiceBaseImpl extends MailServiceMessageImpl {
 
   private final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -302,33 +305,44 @@ public class MailServiceBaseImpl extends MailServiceMessageImpl {
       return;
     }
     final EmailAccount emailAccount = mailAccountService.getDefaultSender();
+
     if (emailAccount == null) {
+      System.out.println("emailAccount is null");
       super.send(message);
       return;
     }
+    System.out.println("Sending email stage - 0");
+    System.out.println(emailAccount.toString());
 
     Preconditions.checkNotNull(message, "mail message can't be null");
 
     final Model related = findEntity(message);
     final MailSender sender = getMailSender(emailAccount);
+    System.out.println("Sending email stage - 1");
 
     final Set<String> recipients = recipients(message, related);
     if (recipients.isEmpty()) {
       return;
     }
+    System.out.println("Sending email stage - 2");
+
     this.updateTemplateAndContext(message, related);
+    System.out.println("Sending email stage - 3");
 
     final MailMessageRepository messages = Beans.get(MailMessageRepository.class);
     MailBuilder builder = sender.compose();
+    System.out.println("Sending email stage - 4");
 
     this.updateRecipientsTemplatesContext(recipients);
     this.setRecipientsFromTemplate(builder, recipients);
+    System.out.println("Sending email stage - 5");
 
     for (MetaAttachment attachment : messages.findAttachments(message)) {
       final Path filePath = MetaFiles.getPath(attachment.getMetaFile());
       final File file = filePath.toFile();
       builder.attach(file.getName(), file.toString());
     }
+    System.out.println("Sending email stage - 6");
 
     MimeMessage email;
     try {
@@ -348,20 +362,29 @@ public class MailServiceBaseImpl extends MailServiceMessageImpl {
     } catch (MessagingException | IOException e) {
       throw new MailException(e);
     }
-
-    // send email using a separate process to void thread blocking
-    executor.submit(
-        new TenantAware(
-                () -> {
-                  try {
-                    send(sender, email);
-                  } catch (Exception e) {
-                    throw new RuntimeException(e);
+    System.out.println("Sending email stage - 7");
+    System.out.println("Email before sending:");
+    try {
+      System.out.println(email.toString());
+      System.out.println(email.getContent().toString());
+      System.out.println(email.getContentMD5());
+      System.out.println(String.valueOf(email.getAllHeaderLines()));
+    } catch (MessagingException e) {
+      throw new RuntimeException(e);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+      // send email using a separate process to void thread blocking
+      executor.submit(
+              new Callable<Boolean>() {
+                  @Override
+                  public Boolean call() throws Exception {
+                      send(sender, email);
+                      return true;
                   }
-                })
-            .withTransaction(false));
+              });
+      System.out.println("Email was sent");
   }
-
   @Override
   protected String template(MailMessage message, Model entity) throws IOException {
     if (messageTemplate == null) {

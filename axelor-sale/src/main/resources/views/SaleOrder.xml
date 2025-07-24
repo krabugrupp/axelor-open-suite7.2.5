@@ -1880,6 +1880,10 @@
     <call class="com.axelor.apps.sale.web.SaleOrderController" method="compute"/>
   </action-method>
 
+  <action-method name="action-sale-order-method-compute-margin">
+    <call class="com.axelor.apps.sale.web.SaleOrderController" method="computeMargin"/>
+  </action-method>
+
   <action-attrs name="action-sale-order-attrs-collapse-specific-settings-group">
     <attribute name="collapse" for="specificSettings" expr="eval: true"/>
   </action-attrs>
@@ -1931,6 +1935,13 @@
   <action-attrs name="action-sale-order-attrs-set-save-actual-version">
     <attribute for="$saveActualVersion" name="value" expr="eval: true"/>
   </action-attrs>
+
+  <action-record name="action-sale-order-record-set-default-tax-number"
+    model="com.axelor.apps.sale.db.SaleOrder">
+    <field name="taxNumber"
+      expr="eval: company?.taxNumberList?.size() == 1 ? company.taxNumberList.collect{it}[0] : null"
+      if="__config__.app.isApp('account')"/>
+  </action-record>
 
   <action-method name="action-sale-order-method-set-client-partner-domain">
     <call class="com.axelor.apps.sale.web.SaleOrderController"

@@ -28,6 +28,8 @@
     <finder-method name="findByAlpha2Code" using="alpha2Code"/>
     <finder-method name="findByNumericCode" using="numericCode"/>
 
+    <finder-method name="findByCode" using="alpha3Code" cacheable="true"/>
+
   </entity>
 
 </domain-models>
