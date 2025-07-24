@@ -556,19 +556,6 @@ public class ProjectBusinessServiceImpl extends ProjectServiceImpl
     return date.getMonthValue() == 12 && date.getYear() == today.getYear() - 1;
   }
 
-  protected BigDecimal getConvertedTime(
-      BigDecimal duration, Unit fromUnit, Unit toUnit, BigDecimal numberHoursADay)
-      throws AxelorException {
-    if (appBusinessProjectService.getDaysUnit().equals(fromUnit)
-        && appBusinessProjectService.getHoursUnit().equals(toUnit)) {
-      return duration.multiply(numberHoursADay);
-    } else if (appBusinessProjectService.getHoursUnit().equals(fromUnit)
-        && appBusinessProjectService.getDaysUnit().equals(toUnit)) {
-      return duration.divide(numberHoursADay, BIG_DECIMAL_SCALE, RoundingMode.HALF_UP);
-    } else {
-      return duration;
-    }
-  }
 
   @Transactional(rollbackOn = {Exception.class})
   @Override
