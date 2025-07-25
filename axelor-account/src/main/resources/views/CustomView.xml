@@ -102,62 +102,61 @@
     <dataset type="sql">
 
             <![CDATA[
-            /*
-            Takes :forecastYear as 'yyyy-mm-dd', then returns all recorded forecast sum and revenue by month as amount
-            and month as _month
-
-            */
+ /*
+    Takes :forecastYear as 'yyyy-mm-dd', then returns all recorded forecast sum and revenue by month as amount
+    and month as _month
+*/
 select _type, _month, _amount from
 (
-(
-            select 'Forecast'                              as _type,
-                   to_char(mm, 'MM') as _month,
-                   (
-                       select coalesce(sum(amount), 0)
-                       from management_forecast
-                                join base_company company on management_forecast.company = company.id
-                       where CAST(date_trunc('month', mm) as date) = CAST(date_trunc('month', estimated_date) as date)
-                         and case
-                                 when :companyCode != 'ALL' then company.code = :companyCode
-                                 else true end
-                   )                                       as _amount
+    -- Forecast
+    select 'Forecast' as _type,
+           to_char(mm, 'MM') as _month,
+           (
+               select coalesce(sum(amount), 0)
+               from management_forecast
+                        join base_company company on management_forecast.company = company.id
+               where date_trunc('month', mm) = date_trunc('month', estimated_date)
+                 and (
+                     case
+                         when :companyCode != 'ALL' then company.code = :companyCode
+                         else true
+                     end
+               )
+           ) as _amount
+    from generate_series(CAST(:forecastYear as timestamp),
+                         CAST(:forecastYear as timestamp) + interval '11 month',
+                         interval '1 month') as mm
 
+    UNION
 
-            from generate_series(CAST(:forecastYear as timestamp), CAST(:forecastYear as timestamp) + interval '11 month',
-                                 interval '1 month') as mm
-            )
-            UNION
-            (
-            select 'Revenue'                               as _type,
-                   to_char(mm, 'MM') as _month,
-                   (
-                       select coalesce(
-                                      sum(
-                                              CASE _invoice.operation_type_select
-                                                  WHEN 3 THEN _invoice.ex_tax_total -- Client sale
-                                                  WHEN 4 THEN -_invoice.ex_tax_total -- Client refund
-                                                  end
-                                          ), 0)
-                       FROM
-                           account_invoice AS _invoice
-                               join base_company on _invoice.company = base_company.id
-                       WHERE
-                               _invoice.status_select = 3
-                         AND (_invoice.operation_type_select=3 OR _invoice.operation_type_select=4)
-                         AND CAST(date_trunc('month', mm) as date) = CAST(date_trunc('month', invoice_date) as date)
-                         -- If categoryCode is 'ALL' get all records, if not then filter by given code
-                         AND CASE
-                                 WHEN :companyCode != 'ALL' THEN base_company.code = :companyCode
-                                 ELSE true
-                           END
-                   )                                       as _amount
-
-            from generate_series(CAST(:forecastYear as timestamp), CAST(:forecastYear as timestamp) + interval '11 month',
-                                 interval '1 month') as mm
-                                 )
-
-)
-order by _month
+    -- Revenue
+    select 'Revenue' as _type,
+           to_char(mm, 'MM') as _month,
+           (
+               select coalesce(
+                          sum(
+                              case _invoice.operation_type_select
+                                  when 3 then _invoice.ex_tax_total
+                                  when 4 then -_invoice.ex_tax_total
+                              end
+                          ), 0)
+               from account_invoice AS _invoice
+                        join base_company on _invoice.company = base_company.id
+               where _invoice.status_select = 3
+                 and (_invoice.operation_type_select = 3 or _invoice.operation_type_select = 4)
+                 and date_trunc('month', mm) = date_trunc('month', invoice_date)
+                 and (
+                     case
+                         when :companyCode != 'ALL' then base_company.code = :companyCode
+                         else true
+                     end
+               )
+           ) as _amount
+    from generate_series(CAST(:forecastYear as timestamp),
+                         CAST(:forecastYear as timestamp) + interval '11 month',
+                         interval '1 month') as mm
+) as forecast_and_revenue
+order by _month;
 			]]>
     </dataset>
     <category key="_month" type="month" title="Month"/>
