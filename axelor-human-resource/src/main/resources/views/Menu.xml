@@ -168,6 +168,13 @@
     <view type="form" name="employment-contract-form"/>
   </action-view>
 
+  <menuitem name="all-employment-assets" parent="hr-root-emp-mgt" title="Employment Assets" action="employment.assets.all" order="3"/>
+
+  <action-view name="employment.assets.all" title="Employee Assets" model="com.axelor.apps.hr.db.EmployeeAsset">
+    <view type="grid" name="employee-assets-employee-grid"/>
+    <view type="form" name="employee-assets-employee-form"/>
+  </action-view>
+
   <menuitem name="all-payroll-preparation" parent="hr-root-emp-mgt"
     title="Payroll Preparations" action="payroll.preparation.all"
     if="__config__.app.getApp('employee')?.getPayrollPreparation()" order="300"/>

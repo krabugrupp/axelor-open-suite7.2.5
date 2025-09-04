@@ -567,6 +567,11 @@
           grid-view="employee-file-grid" form-view="file-form" colSpan="12"/>
       </panel>
 
+      <panel name="employmentAssetsPanel" title="Assets">
+        <field name="employeeAssetList" colSpan="12" form-view="employee-assets-employee-form" grid-view="employee-assets-employee-grid"/>
+      </panel>
+
+
       <panel name="medicalVisitPanel" title="Medical visit" colSpan="12"
         if="__config__.app.isApp('employee') &amp;&amp; __config__.app.getApp('employee')?.getIsMedicalVisitEnabled()">
         <panel-related field="medicalVisitList" showTitle="false"

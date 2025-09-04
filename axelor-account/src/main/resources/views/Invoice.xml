@@ -453,6 +453,7 @@
 	                        		{(operationTypeSelect == 3 || operationTypeSelect == 4) && partner.factorizedCustomer && <Badge bg="info">{_t('Factorized customer')}</Badge>}
 
                                     {sentEmailDate  && <Badge bg="info">{_t(`Email sent on ${new Date(sentEmailDate).toLocaleDateString("ru-RU")}`)}</Badge> }
+                                    {lastEmailAddressSentTo  && <Badge bg="info">{_t(`Email sent to ${lastEmailAddressSentTo}`)}</Badge> }
                                     {sentEinvoiceDate  && <Badge bg="info">{_t(`e-Invoice sent on ${new Date(sentEinvoiceDate).toLocaleDateString("ru-RU")}`)}</Badge> }
 
 	                        	</Box>

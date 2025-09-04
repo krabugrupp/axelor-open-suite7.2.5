@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<domain-models xmlns="http://axelor.com/xml/ns/domain-models"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://axelor.com/xml/ns/domain-models http://axelor.com/xml/ns/domain-models/domain-models_7.4.xsd">
+
+    <module name="human-resource" package="com.axelor.apps.hr.db"/>
+
+    <entity name="EmployeeAsset" cacheable="true">
+        <string name="name" title="Asset name"/>
+        <integer name="cost" title="Asset cost"/>
+
+        <many-to-one name="employee" ref="com.axelor.apps.hr.db.Employee" title="Employee"/>
+        <string name="nonEmployee" title="Employee"/>
+        <many-to-one name="type" ref="com.axelor.apps.hr.db.EmployeeAssetType" title="Asset type"/>
+
+        <date name="bought" title="Asset bought"/>
+        <date name="granted" title="Asset granted"/>
+        <date name="returned" title="Asset returned"/>
+
+        <track>
+            <field name="granted" on="UPDATE"/>
+            <field name="returned" on="UPDATE"/>
+            <field name="nonEmployee" on="UPDATE"/>
+            <message if="Employee || nonEmployee">Assignee changed</message>
+        </track>
+
+    </entity>
+</domain-models>
