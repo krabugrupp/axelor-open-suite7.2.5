@@ -230,6 +230,12 @@
     <domain>self.isActivity = true AND self.dtype = 'Product'</domain>
   </action-view>
 
+  <menuitem name="hr-conf-employment-assets-type" parent="hr-root-emp-mgt-conf" title="Assets Types" action="hr.conf.employment.assets.types" order="3"/>
+  <action-view name="hr.conf.employment.assets.types" title="Employee Assets" model="com.axelor.apps.hr.db.EmployeeAssetType">
+    <view type="grid" name="asset-type-grid"/>
+    <view type="form" name="asset-type-form"/>
+  </action-view>
+
   <menuitem name="end-of-contract-reason-all" parent="hr-root-emp-mgt-conf"
     title="End of contract reasons" action="end.of.contract.reason.all" order="200"/>
 
