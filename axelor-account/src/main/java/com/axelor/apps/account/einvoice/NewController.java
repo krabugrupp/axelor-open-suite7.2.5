@@ -6,8 +6,6 @@ import com.axelor.apps.account.db.repo.MessageRepositoryImpl;
 import com.axelor.apps.base.db.Partner;
 import com.axelor.i18n.I18n;
 import com.axelor.message.db.EmailAddress;
-import com.axelor.message.db.Message;
-import com.axelor.message.db.repo.MessageRepository;
 import com.axelor.meta.CallMethod;
 import com.axelor.rpc.ActionRequest;
 import com.axelor.rpc.ActionResponse;
@@ -17,7 +15,6 @@ import jakarta.xml.ws.soap.SOAPFaultException;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class NewController {
@@ -81,8 +78,8 @@ public class NewController {
     invoiceInDb.setSentEmailDate(LocalDate.now());
     invoiceInDb.setLastEmailAddressSentTo(
             messageRepositoryImpl.findByRelatedInvoiceId(invoiceId)
-                    .getToEmailAddressSet()
                     .stream()
+                    .flatMap(msg -> msg.getToEmailAddressSet().stream())
                     .map(EmailAddress::getAddress)
                     .collect(Collectors.joining(", "))
     );

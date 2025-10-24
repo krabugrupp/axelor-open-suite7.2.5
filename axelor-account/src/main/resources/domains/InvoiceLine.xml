@@ -13,8 +13,8 @@
     <integer name="sequence" title="Seq."/>
 
     <many-to-one name="product" ref="com.axelor.apps.base.db.Product" title="Product"/>
-    <string name="productName" title="Product Name"/>
-    <string name="productCode" title="Product Code"/>
+    <string name="productName" title="Product Name" max="1024"/>
+    <string name="productCode" title="Product Code" max="1024"/>
 
     <decimal name="price" title="Unit price W.T." precision="20" scale="10"/>
     <decimal name="inTaxPrice" title="Unit price A.T.I." precision="20" scale="10"/>

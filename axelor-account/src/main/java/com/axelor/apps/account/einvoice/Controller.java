@@ -76,8 +76,8 @@ public class Controller {
     invoiceInDb.setSentEmailDate(LocalDate.now());
     invoiceInDb.setLastEmailAddressSentTo(
             messageRepositoryImpl.findByRelatedInvoiceId(invoiceId)
-                    .getToEmailAddressSet()
                     .stream()
+                    .flatMap(msg -> msg.getToEmailAddressSet().stream())
                     .map(EmailAddress::getAddress)
                     .collect(Collectors.joining(", "))
     );

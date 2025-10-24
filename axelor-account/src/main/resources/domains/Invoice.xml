@@ -230,7 +230,7 @@
     <string name="headOfficeAddress" title="Head office address"/>
 
     <date name="sentEmailDate" title="sent Email"/>
-    <string name="lastEmailSentAddress" title="Last sent email address"/>
+    <string name="lastEmailAddressSentTo" title="Last sent email address"/>
     <date name="sentEinvoiceDate" title="sent Electronic invoice"/>
 
     <boolean name="displayStockMoveOnInvoicePrinting" title="Display Deliveries on printing"
@@ -370,7 +370,7 @@
       <field name="reasonOfRefusalToPay" on="UPDATE"/>
       <field name="reasonOfRefusalToPayStr" on="UPDATE"/>
       <field name="sentEmailDate" on="UPDATE"/>
-      <field name="lastEmailSentAddress" on="UPDATE"/>
+      <field name="lastEmailAddressSentTo" on="UPDATE"/>
       <field name="sentEinvoiceDate" on="UPDATE"/>
       <field name="companyTaxNumber" on="UPDATE"/>
       <message if="true" on="CREATE">Invoice created</message>

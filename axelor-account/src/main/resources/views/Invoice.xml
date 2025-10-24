@@ -429,7 +429,7 @@
       </panel>
       <panel name="viewerTagsPanel" colSpan="5">
         <field name="$viewerTags" showTitle="false" readonly="true" showIf="$readonly()"
-          colSpan="9" depends="partner.factorizedCustomer,sentEmailDate,sentEinvoiceDate">
+          colSpan="9" depends="partner.factorizedCustomer,sentEmailDate,sentEinvoiceDate,lastEmailAddressSentTo">
           <viewer>
 	                    <![CDATA[
 	                        <>
@@ -454,6 +454,7 @@
 
                                     {sentEmailDate  && <Badge bg="info">{_t(`Email sent on ${new Date(sentEmailDate).toLocaleDateString("ru-RU")}`)}</Badge> }
                                     {lastEmailAddressSentTo  && <Badge bg="info">{_t(`Email sent to ${lastEmailAddressSentTo}`)}</Badge> }
+
                                     {sentEinvoiceDate  && <Badge bg="info">{_t(`e-Invoice sent on ${new Date(sentEinvoiceDate).toLocaleDateString("ru-RU")}`)}</Badge> }
 
 	                        	</Box>
