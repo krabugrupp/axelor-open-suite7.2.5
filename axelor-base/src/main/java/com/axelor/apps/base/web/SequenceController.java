@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -64,6 +64,22 @@ public class SequenceController {
   public void verifyPattern(ActionRequest request, ActionResponse response) throws AxelorException {
     Sequence sequence = request.getContext().asType(Sequence.class);
     Beans.get(SequenceService.class).verifyPattern(sequence);
+  }
+
+  public void updateSequenceVersionsDaily(ActionRequest request, ActionResponse response) {
+    try {
+      Sequence sequence = request.getContext().asType(Sequence.class);
+      SequenceService sequenceService = Beans.get(SequenceService.class);
+      LocalDate todayDate = Beans.get(AppBaseService.class).getTodayDate(sequence.getCompany());
+      LocalDate endOfDate = todayDate;
+      if (sequence.getDailyResetOk()) {
+        response.setValue(
+            "sequenceVersionList",
+            sequenceService.updateSequenceVersions(sequence, todayDate, endOfDate));
+      }
+    } catch (Exception e) {
+      TraceBackService.trace(response, e);
+    }
   }
 
   public void updateSequenceVersionsMonthly(ActionRequest request, ActionResponse response) {

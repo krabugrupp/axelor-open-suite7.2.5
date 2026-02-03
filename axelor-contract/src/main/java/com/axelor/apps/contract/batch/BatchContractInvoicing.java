@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,9 +18,8 @@
  */
 package com.axelor.apps.contract.batch;
 
+import com.axelor.apps.account.db.Invoice;
 import com.axelor.apps.base.AxelorException;
-import com.axelor.apps.base.db.repo.BatchRepository;
-import com.axelor.apps.base.service.administration.AbstractBatch;
 import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.contract.db.Contract;
 import com.axelor.apps.contract.db.ContractBatch;
@@ -40,7 +39,7 @@ import java.util.stream.Collectors;
 import javax.persistence.Query;
 import org.apache.commons.collections.CollectionUtils;
 
-public class BatchContractInvoicing extends AbstractBatch {
+public class BatchContractInvoicing extends BatchStrategy {
 
   protected ContractRepository contractRepository;
   protected ContractInvoicingService contractInvoicingService;
@@ -66,7 +65,6 @@ public class BatchContractInvoicing extends AbstractBatch {
             + "AND self.invoicing_date <= :invoicingDate "
             + "AND self.status_select != :closedContract "
             + "AND (SELECT automatic_invoicing FROM contract_contract_version WHERE contract_contract_version.id = self.current_contract_version) IS TRUE "
-            + "AND self.id NOT IN (SELECT DISTINCT contract_set FROM account_invoice_contract_set) "
             + "GROUP BY self.invoiced_partner, self.invoicing_date, self.invoice_period_end_date, self.invoice_period_start_date, self.is_grouped_invoicing";
 
     Query query =
@@ -101,27 +99,53 @@ public class BatchContractInvoicing extends AbstractBatch {
   }
 
   @Transactional
-  public void invoiceContracts(List<Contract> contractList) throws AxelorException {
+  public Invoice invoiceContracts(List<Contract> contractList) throws AxelorException {
     if (contractList.size() == 1) {
-      contractInvoicingService.invoicingContract(contractList.get(0));
+      return contractInvoicingService.invoicingContract(contractList.get(0));
     }
 
     if (contractList.size() > 1) {
-      contractInvoicingService.invoicingContracts(contractList);
+      return contractInvoicingService.invoicingContracts(contractList);
     }
+    return null;
   }
 
   @Override
   protected void process() {
+    int offset = 0;
     for (List<Long> idList : getIdsGroupedBy()) {
+      ++offset;
+      List<Contract> contractsList = findContractsInList(idList);
       try {
-        invoiceContracts(findContractsInList(idList));
-        incrementDone();
-        JPA.clear();
+        Invoice invoice = invoiceContracts(contractsList);
+        if (invoice != null) {
+          invoice.addBatchSetItem(batchRepo.find(batch.getId()));
+          incrementDone(contractsList);
+        }
       } catch (Exception e) {
-        incrementAnomaly();
+        incrementAnomaly(contractsList);
         TraceBackService.trace(e, "Contract invoicing batch", batch.getId());
       }
+      if (offset % getFetchLimit() == 0) {
+        JPA.clear();
+        findBatch();
+      }
+    }
+  }
+
+  protected void incrementDone(List<Contract> contractsList) {
+    for (Contract contract : contractsList) {
+      contract.addBatchSetItem(batch);
+      super.incrementDone();
+    }
+  }
+
+  protected void incrementAnomaly(List<Contract> contractsList) {
+    findBatch();
+    for (Contract contract : contractsList) {
+      contract = contractRepository.find(contract.getId());
+      contract.addBatchSetItem(batch);
+      super.incrementAnomaly();
     }
   }
 
@@ -133,10 +157,5 @@ public class BatchContractInvoicing extends AbstractBatch {
             I18n.get(ITranslation.CONTRACT_BATCH_EXECUTION_RESULT),
             batch.getDone(),
             batch.getAnomaly()));
-  }
-
-  @Override
-  protected void setBatchTypeSelect() {
-    this.batch.setBatchTypeSelect(BatchRepository.BATCH_TYPE_CONTRACT_BATCH);
   }
 }

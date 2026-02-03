@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -408,8 +408,15 @@ public class MoveLineExportServiceImpl implements MoveLineExportService {
     String moveLineQueryStr = StringUtils.join(moveLineQueryList, " AND ");
 
     List<Long> idList =
-        moveLineRepo.all().filter(moveLineQueryStr).order("move.accountingDate").order("date")
-            .order("name").select("id").fetch(0, 0).stream()
+        moveLineRepo
+            .all()
+            .filter(moveLineQueryStr)
+            .order("move.accountingDate")
+            .order("date")
+            .order("name")
+            .select("id")
+            .fetch(0, 0)
+            .stream()
             .map(m -> (Long) m.get("id"))
             .collect(Collectors.toList());
 

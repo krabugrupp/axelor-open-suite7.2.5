@@ -85,17 +85,6 @@
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
-        <scalar-parameter name="ExportTypeSelect" id="6489">
-            <property name="valueType">static</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <list-property name="selectionList"/>
-            <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
     </parameters>
     <data-sources>
         <oda-data-source extensionID="org.eclipse.birt.report.data.oda.jdbc" name="Data Source" id="209">
@@ -316,8 +305,7 @@
             <method name="onFetch"><![CDATA[if(dataSetRow["showProvisionTitle"])
 {
 	vars["showProvisionTitle"] = dataSetRow["showProvisionTitle"];
-}
-vars["numberOfDecimals"] = dataSetRow["number_of_decimals"];]]></method>
+}]]></method>
             <property name="dataSource">Data Source</property>
             <list-property name="resultSet">
                 <structure>
@@ -2910,7 +2898,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="fontSize">8pt</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["SumSoldeClientByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["SumSoldeClientByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1763">
@@ -2944,7 +2932,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                                 </structure>
                                             </list-property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["SumNonDueByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["SumNonDueByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="6301">
@@ -2967,7 +2955,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                                 </structure>
                                             </list-property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum<30daysByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum<30daysByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="6294">
@@ -2990,7 +2978,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                                 </structure>
                                             </list-property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum30<days<60ByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum30<days<60ByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1652">
@@ -3013,7 +3001,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                                 </structure>
                                             </list-property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum60<days<90ByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum60<days<90ByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1654">
@@ -3037,7 +3025,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             </list-property>
                                             <structure name="toc"/>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum90<days<120ByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum90<days<120ByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1656">
@@ -3060,7 +3048,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                                 </structure>
                                             </list-property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum120<days<150ByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum120<days<150ByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1658">
@@ -3083,7 +3071,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                                 </structure>
                                             </list-property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum150<days<180ByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum150<days<180ByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1660">
@@ -3106,7 +3094,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                                 </structure>
                                             </list-property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum180<daysByPartner"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum180<daysByPartner"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                 </row>
@@ -3186,7 +3174,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="fontSize">8pt</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["SumNonDueByInvoiceName"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["SumNonDueByInvoiceName"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="6302">
@@ -3200,7 +3188,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="fontSize">8pt</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum<30daysByInvoiceName"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum<30daysByInvoiceName"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="6295">
@@ -3214,7 +3202,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="fontSize">8pt</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum30<days<60ByInvoiceName"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum30<days<60ByInvoiceName"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1744">
@@ -3228,7 +3216,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="fontSize">8pt</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum60<days<90ByInvoiceName"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum60<days<90ByInvoiceName"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1745">
@@ -3243,7 +3231,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="textAlign">right</property>
                                             <structure name="toc"/>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum90<days<120ByInvoiceName"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum90<days<120ByInvoiceName"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1746">
@@ -3257,7 +3245,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="fontSize">8pt</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum120<days<150ByInvoiceName"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum120<days<150ByInvoiceName"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1747">
@@ -3271,7 +3259,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="fontSize">8pt</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum150<days<180ByInvoiceName"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum150<days<180ByInvoiceName"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="1748">
@@ -3285,7 +3273,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                             <property name="fontSize">8pt</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum180<daysByInvoiceName"])</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum180<daysByInvoiceName"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                 </row>
@@ -3362,7 +3350,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["SumSoldeClient"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["SumSoldeClient"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="1769">
@@ -3399,7 +3387,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["SumNonDue"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["SumNonDue"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="6303">
@@ -3421,7 +3409,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum<30days"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum<30days"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="6296">
@@ -3443,7 +3431,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum30<days<90"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum30<days<90"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="1694">
@@ -3465,7 +3453,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum60<days<90"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum60<days<90"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="1696">
@@ -3487,7 +3475,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum90<days<120"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum90<days<120"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="1698">
@@ -3509,7 +3497,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum120<days<150"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum120<days<150"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="1700">
@@ -3531,7 +3519,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum150<days<180"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum150<days<180"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="1702">
@@ -3553,7 +3541,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["Sum180<days"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["Sum180<days"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                             </row>
@@ -3644,7 +3632,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                                         <property name="fontWeight">bold</property>
                                         <property name="textAlign">right</property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<VALUE-OF>formatNumber(row["SumTotal"])</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["SumTotal"], row["number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="1714">
@@ -3670,7 +3658,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                 </cell>
             </row>
         </grid>
-        <grid id="6483">
+        <grid id="6455">
             <property name="marginTop">10pt</property>
             <property name="dataSet">MoveLineDS</property>
             <list-property name="visibility">
@@ -3687,10 +3675,10 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
                     <property name="dataType">string</property>
                 </structure>
             </list-property>
-            <column id="6484"/>
-            <row id="6485">
-                <cell id="6486">
-                    <text id="6487">
+            <column id="6456"/>
+            <row id="6457">
+                <cell id="6458">
+                    <text id="6459">
                         <property name="dataSet">TranslateDS</property>
                         <list-property name="paramBindings">
                             <structure>
@@ -3719,9 +3707,6 @@ where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^
     <property name="pageVariables">
         <variable-element name="showProvisionTitle">
             <expression name="value" type="javascript">false</expression>
-            <property name="type">report</property>
-        </variable-element>
-        <variable-element name="numberOfDecimals">
             <property name="type">report</property>
         </variable-element>
     </property>

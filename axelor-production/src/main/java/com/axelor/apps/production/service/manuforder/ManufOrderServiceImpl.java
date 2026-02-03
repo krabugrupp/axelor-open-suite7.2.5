@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -27,13 +27,11 @@ import com.axelor.apps.base.db.Unit;
 import com.axelor.apps.base.db.repo.PartnerRepository;
 import com.axelor.apps.base.db.repo.ProductRepository;
 import com.axelor.apps.base.db.repo.TraceBackRepository;
-import com.axelor.apps.base.service.BarcodeGeneratorService;
 import com.axelor.apps.base.service.ProductCompanyService;
 import com.axelor.apps.base.service.ProductVariantService;
 import com.axelor.apps.base.service.UnitConversionService;
 import com.axelor.apps.base.service.administration.SequenceService;
 import com.axelor.apps.base.service.app.AppBaseService;
-import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.production.db.BillOfMaterial;
 import com.axelor.apps.production.db.BillOfMaterialLine;
 import com.axelor.apps.production.db.ManufOrder;
@@ -48,6 +46,7 @@ import com.axelor.apps.production.db.repo.BillOfMaterialRepository;
 import com.axelor.apps.production.db.repo.ManufOrderRepository;
 import com.axelor.apps.production.db.repo.ProdProcessRepository;
 import com.axelor.apps.production.db.repo.ProdProductRepository;
+import com.axelor.apps.production.db.repo.ProductionConfigRepository;
 import com.axelor.apps.production.exceptions.ProductionExceptionMessage;
 import com.axelor.apps.production.service.BillOfMaterialService;
 import com.axelor.apps.production.service.app.AppProductionService;
@@ -71,16 +70,12 @@ import com.axelor.common.StringUtils;
 import com.axelor.db.mapper.Mapper;
 import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
-import com.axelor.meta.MetaFiles;
-import com.axelor.meta.db.MetaFile;
 import com.axelor.utils.helpers.StringHelper;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -95,9 +90,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.ValidationException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -117,10 +112,8 @@ public class ManufOrderServiceImpl implements ManufOrderService {
   protected ManufOrderRepository manufOrderRepo;
   protected ProdProductRepository prodProductRepo;
   protected ProductCompanyService productCompanyService;
-  protected BarcodeGeneratorService barcodeGeneratorService;
   protected ProductStockLocationService productStockLocationService;
   protected UnitConversionService unitConversionService;
-  protected MetaFiles metaFiles;
   protected PartnerRepository partnerRepository;
   protected BillOfMaterialService billOfMaterialService;
   protected StockMoveService stockMoveService;
@@ -141,10 +134,8 @@ public class ManufOrderServiceImpl implements ManufOrderService {
       ManufOrderRepository manufOrderRepo,
       ProdProductRepository prodProductRepo,
       ProductCompanyService productCompanyService,
-      BarcodeGeneratorService barcodeGeneratorService,
       ProductStockLocationService productStockLocationService,
       UnitConversionService unitConversionService,
-      MetaFiles metaFiles,
       PartnerRepository partnerRepository,
       BillOfMaterialService billOfMaterialService,
       StockMoveService stockMoveService,
@@ -162,10 +153,8 @@ public class ManufOrderServiceImpl implements ManufOrderService {
     this.manufOrderRepo = manufOrderRepo;
     this.prodProductRepo = prodProductRepo;
     this.productCompanyService = productCompanyService;
-    this.barcodeGeneratorService = barcodeGeneratorService;
     this.productStockLocationService = productStockLocationService;
     this.unitConversionService = unitConversionService;
-    this.metaFiles = metaFiles;
     this.partnerRepository = partnerRepository;
     this.billOfMaterialService = billOfMaterialService;
     this.stockMoveService = stockMoveService;
@@ -572,7 +561,8 @@ public class ManufOrderServiceImpl implements ManufOrderService {
           false,
           BigDecimal.ZERO,
           virtualStockLocation,
-          wasteStockLocation);
+          wasteStockLocation,
+          prodProduct.getWasteProductTrackingNumber());
     }
 
     stockMoveService.validate(wasteStockMove);
@@ -996,13 +986,27 @@ public class ManufOrderServiceImpl implements ManufOrderService {
       }
     }
 
-    Optional<LocalDateTime> minDate =
-        manufOrderList.stream()
-            .filter(mo -> mo.getPlannedStartDateT() != null)
-            .map(ManufOrder::getPlannedStartDateT)
-            .min(LocalDateTime::compareTo);
+    ProductionConfigService productionConfigService = Beans.get(ProductionConfigService.class);
+    ProductionConfig productionConfig = productionConfigService.getProductionConfig(company);
+    int scheduling = productionConfig.getScheduling();
 
-    minDate.ifPresent(mergedManufOrder::setPlannedStartDateT);
+    if (scheduling == ProductionConfigRepository.AS_SOON_AS_POSSIBLE_SCHEDULING) {
+      Optional<LocalDateTime> minStartDate =
+          manufOrderList.stream()
+              .map(ManufOrder::getPlannedStartDateT)
+              .filter(Objects::nonNull)
+              .min(LocalDateTime::compareTo);
+
+      minStartDate.ifPresent(mergedManufOrder::setPlannedStartDateT);
+    } else {
+      Optional<LocalDateTime> minEndDate =
+          manufOrderList.stream()
+              .map(ManufOrder::getPlannedEndDateT)
+              .filter(Objects::nonNull)
+              .min(LocalDateTime::compareTo);
+
+      minEndDate.ifPresent(mergedManufOrder::setPlannedEndDateT);
+    }
 
     /* Update the created manuf order */
     mergedManufOrder.setStatusSelect(ManufOrderRepository.STATUS_DRAFT);
@@ -1108,27 +1112,6 @@ public class ManufOrderServiceImpl implements ManufOrderService {
     }
 
     return true;
-  }
-
-  @Override
-  public void createBarcode(ManufOrder manufOrder) {
-    String manufOrderSeq = manufOrder.getManufOrderSeq();
-
-    try (InputStream inStream =
-        barcodeGeneratorService.createBarCode(
-            manufOrderSeq, appProductionService.getAppProduction().getBarcodeTypeConfig(), true)) {
-
-      if (inStream != null) {
-        MetaFile barcodeFile =
-            metaFiles.upload(
-                inStream, String.format("ManufOrderBarcode%d.png", manufOrder.getId()));
-        manufOrder.setBarCode(barcodeFile);
-      }
-    } catch (IOException e) {
-      TraceBackService.trace(e);
-    } catch (AxelorException e) {
-      throw new ValidationException(e.getMessage());
-    }
   }
 
   @Override
@@ -1278,6 +1261,9 @@ public class ManufOrderServiceImpl implements ManufOrderService {
     BigDecimal bomQty = billOfMaterial.getQty();
 
     for (BillOfMaterialLine billOfMaterialLine : billOfMaterial.getBillOfMaterialLineList()) {
+      if (billOfMaterialLine.getHasNoManageStock()) {
+        continue;
+      }
       Product product = billOfMaterialLine.getProduct();
       BigDecimal availableQty = productStockLocationService.getAvailableQty(product, company, null);
       BigDecimal qtyNeeded = billOfMaterialLine.getQty();
@@ -1344,6 +1330,7 @@ public class ManufOrderServiceImpl implements ManufOrderService {
 
     Map<Product, Pair<BigDecimal, Unit>> bomLineMap =
         billOfMaterial.getBillOfMaterialLineList().stream()
+            .filter(bomLine -> !bomLine.getHasNoManageStock())
             .collect(
                 Collectors.toMap(
                     BillOfMaterialLine::getProduct,

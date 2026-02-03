@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,7 +19,6 @@
 package com.axelor.apps.businessproduction.service;
 
 import com.axelor.apps.base.AxelorException;
-import com.axelor.apps.base.service.BarcodeGeneratorService;
 import com.axelor.apps.hr.db.TimesheetLine;
 import com.axelor.apps.hr.service.timesheet.TimesheetLineService;
 import com.axelor.apps.production.db.ManufOrder;
@@ -27,6 +26,7 @@ import com.axelor.apps.production.db.OperationOrder;
 import com.axelor.apps.production.db.OperationOrderDuration;
 import com.axelor.apps.production.db.ProdProcessLine;
 import com.axelor.apps.production.db.repo.OperationOrderRepository;
+import com.axelor.apps.production.service.ProdProcessLineComputationService;
 import com.axelor.apps.production.service.ProdProcessLineService;
 import com.axelor.apps.production.service.app.AppProductionService;
 import com.axelor.apps.production.service.manuforder.ManufOrderCheckStockMoveLineService;
@@ -46,7 +46,6 @@ public class OperationOrderServiceBusinessImpl extends OperationOrderServiceImpl
 
   @Inject
   public OperationOrderServiceBusinessImpl(
-      BarcodeGeneratorService barcodeGeneratorService,
       AppProductionService appProductionService,
       ManufOrderStockMoveService manufOrderStockMoveService,
       ProdProcessLineService prodProcessLineService,
@@ -54,9 +53,9 @@ public class OperationOrderServiceBusinessImpl extends OperationOrderServiceImpl
       OperationOrderOutsourceService operationOrderOutsourceService,
       ManufOrderCheckStockMoveLineService manufOrderCheckStockMoveLineService,
       ManufOrderPlanStockMoveService manufOrderPlanStockMoveService,
-      ManufOrderUpdateStockMoveService manufOrderUpdateStockMoveService) {
+      ManufOrderUpdateStockMoveService manufOrderUpdateStockMoveService,
+      ProdProcessLineComputationService prodProcessLineComputationService) {
     super(
-        barcodeGeneratorService,
         appProductionService,
         manufOrderStockMoveService,
         prodProcessLineService,
@@ -64,7 +63,8 @@ public class OperationOrderServiceBusinessImpl extends OperationOrderServiceImpl
         operationOrderOutsourceService,
         manufOrderCheckStockMoveLineService,
         manufOrderPlanStockMoveService,
-        manufOrderUpdateStockMoveService);
+        manufOrderUpdateStockMoveService,
+        prodProcessLineComputationService);
   }
 
   @Override

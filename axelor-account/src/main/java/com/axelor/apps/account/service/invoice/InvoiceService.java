@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,7 @@ import com.axelor.apps.account.db.InvoiceLine;
 import com.axelor.apps.account.db.MoveLine;
 import com.axelor.apps.account.db.PaymentCondition;
 import com.axelor.apps.account.db.PaymentMode;
+import com.axelor.apps.account.db.TaxNumber;
 import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.db.BankDetails;
 import com.axelor.apps.base.db.CancelReason;
@@ -94,6 +95,14 @@ public interface InvoiceService {
    * @throws AxelorException
    */
   public void cancel(Invoice invoice) throws AxelorException;
+
+  /**
+   * Return to draft status.
+   *
+   * @param invoice
+   * @throws AxelorException
+   */
+  void backToDraft(Invoice invoice) throws AxelorException;
 
   /**
    * Procédure permettant d'impacter la case à cocher "Passage à l'huissier" sur l'écriture de
@@ -224,6 +233,7 @@ public interface InvoiceService {
    * @return
    */
   List<MoveLine> getMoveLinesFromSOAdvancePayments(Invoice invoice);
+
   /**
    * Filter a set of advance payment invoice. If the amount of the payment is greater than the total
    * of the invoice, we filter it. If there is no remaining amount in the move lines of the advance
@@ -297,8 +307,6 @@ public interface InvoiceService {
 
   boolean isSelectedPfpValidatorEqualsPartnerPfpValidator(Invoice invoice);
 
-  public void validatePfp(Long invoiceId) throws AxelorException;
-
   void updateUnpaidInvoiceTerms(Invoice invoice);
 
   /**
@@ -314,4 +322,8 @@ public interface InvoiceService {
   Invoice computeEstimatedPaymentDate(Invoice invoice);
 
   void updateThirdPartyPayerPartner(Invoice invoice);
+
+  FiscalPosition manageFiscalPositionFromCompanyTaxNumber(Invoice invoice);
+
+  TaxNumber getDefaultCompanyTaxNumber(Invoice invoice);
 }

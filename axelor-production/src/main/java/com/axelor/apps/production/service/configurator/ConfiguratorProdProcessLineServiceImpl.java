@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -111,7 +111,7 @@ public class ConfiguratorProdProcessLineServiceImpl implements ConfiguratorProdP
       Object computedPriority =
           configuratorService.computeFormula(confProdProcessLine.getPriorityFormula(), attributes);
       if (computedPriority != null) {
-        priority = new Integer(String.valueOf(computedPriority));
+        priority = Integer.valueOf(String.valueOf(computedPriority));
       } else {
         priority = 0;
       }

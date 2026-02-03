@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,11 +22,13 @@ import com.axelor.apps.account.db.Account;
 import com.axelor.apps.account.db.AnalyticDistributionTemplate;
 import com.axelor.apps.account.db.MoveTemplate;
 import com.axelor.apps.account.db.MoveTemplateLine;
+import com.axelor.apps.account.db.repo.AccountConfigRepository;
 import com.axelor.apps.account.db.repo.AccountRepository;
 import com.axelor.apps.account.db.repo.AccountTypeRepository;
 import com.axelor.apps.account.db.repo.MoveTemplateLineRepository;
 import com.axelor.apps.account.exception.AccountExceptionMessage;
 import com.axelor.apps.account.service.AccountService;
+import com.axelor.apps.account.service.TaxAccountService;
 import com.axelor.apps.account.service.analytic.AnalyticDistributionTemplateService;
 import com.axelor.apps.account.service.app.AppAccountService;
 import com.axelor.apps.account.service.config.AccountConfigService;
@@ -36,6 +38,7 @@ import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.ResponseMessageType;
 import com.axelor.apps.base.db.Company;
 import com.axelor.apps.base.db.repo.TraceBackRepository;
+import com.axelor.apps.base.service.exception.ErrorException;
 import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.common.ObjectUtils;
 import com.axelor.db.Model;
@@ -108,20 +111,6 @@ public class AccountController {
 
     } catch (Exception e) {
       TraceBackService.trace(response, e);
-    }
-  }
-
-  public void checkAnalyticAccount(ActionRequest request, ActionResponse response) {
-    try {
-      Account account = request.getContext().asType(Account.class);
-      Beans.get(AccountService.class)
-          .checkAnalyticAxis(
-              account,
-              account.getAnalyticDistributionTemplate(),
-              account.getAnalyticDistributionRequiredOnMoveLines(),
-              account.getAnalyticDistributionRequiredOnInvoiceLines());
-    } catch (Exception e) {
-      TraceBackService.trace(response, e, ResponseMessageType.ERROR);
     }
   }
 
@@ -280,12 +269,6 @@ public class AccountController {
           Beans.get(AnalyticDistributionTemplateService.class);
       analyticDistributionTemplateService.verifyTemplateValues(
           account.getAnalyticDistributionTemplate());
-      Beans.get(AccountService.class)
-          .checkAnalyticAxis(
-              account,
-              account.getAnalyticDistributionTemplate(),
-              account.getAnalyticDistributionRequiredOnMoveLines(),
-              account.getAnalyticDistributionRequiredOnInvoiceLines());
       analyticDistributionTemplateService.validateTemplatePercentages(
           account.getAnalyticDistributionTemplate());
     } catch (Exception e) {
@@ -346,5 +329,38 @@ public class AccountController {
     actionViewBuilder.context("moveTemplateIds", moveTemplateIdList);
 
     response.setView(actionViewBuilder.map());
+  }
+
+  public void checkDefaultTaxSet(ActionRequest request, ActionResponse response) {
+    try {
+      Account account = request.getContext().asType(Account.class);
+      if (account != null && account.getDefaultTaxSet() != null) {
+        TaxAccountService taxAccountService = Beans.get(TaxAccountService.class);
+        taxAccountService.checkTaxesNotOnlyNonDeductibleTaxes(account.getDefaultTaxSet());
+        taxAccountService.checkSumOfNonDeductibleTaxes(account.getDefaultTaxSet());
+      }
+    } catch (Exception e) {
+      TraceBackService.trace(response, e, ResponseMessageType.ERROR);
+    }
+  }
+
+  @ErrorException
+  public void originAnalyticDistTemplate(ActionRequest request, ActionResponse response)
+      throws AxelorException {
+    Account account = request.getContext().asType(Account.class);
+    if (Boolean.TRUE.equals(account.getAnalyticDistributionAuthorized())) {
+      Company accountCompany = account.getCompany();
+      if (accountCompany != null && accountCompany.getAccountConfig() != null) {
+        Integer analyticDistSelect =
+            Beans.get(AccountConfigService.class)
+                .getAccountConfig(accountCompany)
+                .getAnalyticDistributionTypeSelect();
+        if (analyticDistSelect == AccountConfigRepository.DISTRIBUTION_TYPE_PARTNER) {
+          response.setAttr("analyticDistributionTemplateLabel", "hidden", false);
+        } else if (analyticDistSelect == AccountConfigRepository.DISTRIBUTION_TYPE_PRODUCT) {
+          response.setAttr("analyticDistributionTemplate", "required", true);
+        }
+      }
+    }
   }
 }

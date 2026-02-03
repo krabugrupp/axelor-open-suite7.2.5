@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<object-views xmlns="http://axelor.com/xml/ns/object-views" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://axelor.com/xml/ns/object-views http://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
+
+    <form name="employee-assets-employee-form" title="Employee assets" model="com.axelor.apps.hr.db.EmployeeAsset" onNew="action-hr-employee-asset-record-on-new">
+        <panel name="mainPanel">
+            <field name="type" required="true"/>
+            <field name="name" required="true"/>
+            <field name="cost"/>
+            <field name="bought"/>
+            <field name="granted"/>
+            <field name="returned"/>
+            <field name="employee" onChange="action-hr-employee-asset-record-on-change"/>
+            <field name="nonEmployee" hideIf="employee" title="Non-company person"/>
+            <button name="unassignAsset" onClick="action-hr-employee-asset-unassign" title="Unassign" hideIf="returned"/>
+        </panel>
+        <panel-mail name="mailPanel">
+            <mail-messages limit="4"/>
+        </panel-mail>
+    </form>
+
+    <grid name="employee-assets-employee-grid" title="Employee assets" model="com.axelor.apps.hr.db.EmployeeAsset">
+        <hilite if="!employee &amp;&amp; !nonEmployee" color="success"/>
+        <hilite if="!employee &amp;&amp; nonEmployee" color="primary"/>
+        <hilite if="!returned &amp;&amp; employee &amp;&amp; $get('employee.mainEmploymentContract.endDate') != null &amp;&amp; $moment($get('employee.mainEmploymentContract.endDate')).diff(todayDate,'days') &lt; 0" color="danger"/>
+        <field name="type"/>
+        <field name="name"/>
+        <field name="cost"/>
+        <field name="bought"/>
+        <field name="granted"/>
+        <field name="returned"/>
+        <field name="employee" hidden="true"/>
+        <field name="nonEmployee" title="Employee"/>
+        <field name="employee.mainEmploymentContract.endDate" hidden="true"/>
+    </grid>
+
+    <action-record name="action-hr-employee-asset-record-on-new" model="com.axelor.apps.hr.db.EmployeeAsset">
+        <field name="bought" expr="eval: __date__"/>
+        <field name="granted" expr="eval: __date__"/>
+    </action-record>
+
+    <action-record name="action-hr-employee-asset-record-on-change" model="com.axelor.apps.hr.db.EmployeeAsset">
+        <field name="nonEmployee" expr="eval: __this__.employee?.name"/>
+        <field name="granted" expr="eval: __date__"/>
+        <field name="returned" expr="eval: null"/>
+    </action-record>
+
+    <action-record name="action-hr-employee-asset-unassign" model="com.axelor.apps.hr.db.EmployeeAsset">
+        <field name="employee" expr="eval: null"/>
+        <field name="nonEmployee" expr="eval: null"/>
+        <field name="returned" expr="eval: __date__"/>
+    </action-record>
+
+</object-views>

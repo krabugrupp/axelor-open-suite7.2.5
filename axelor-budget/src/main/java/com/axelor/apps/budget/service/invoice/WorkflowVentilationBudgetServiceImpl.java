@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -33,16 +33,17 @@ import com.axelor.apps.base.service.app.AppBaseService;
 import com.axelor.apps.budget.service.AppBudgetService;
 import com.axelor.apps.businessproject.db.repo.InvoicingProjectRepository;
 import com.axelor.apps.businessproject.service.WorkflowVentilationProjectServiceImpl;
+import com.axelor.apps.contract.service.ContractVersionService;
 import com.axelor.apps.hr.db.repo.TimesheetLineRepository;
 import com.axelor.apps.purchase.db.repo.PurchaseOrderRepository;
 import com.axelor.apps.sale.db.repo.SaleOrderRepository;
 import com.axelor.apps.stock.db.repo.StockMoveLineRepository;
 import com.axelor.apps.supplychain.service.AccountingSituationSupplychainService;
 import com.axelor.apps.supplychain.service.PurchaseOrderInvoiceService;
-import com.axelor.apps.supplychain.service.SaleOrderInvoiceService;
 import com.axelor.apps.supplychain.service.StockMoveInvoiceService;
 import com.axelor.apps.supplychain.service.app.AppSupplychainService;
 import com.axelor.apps.supplychain.service.config.SupplyChainConfigService;
+import com.axelor.apps.supplychain.service.saleorder.SaleOrderInvoiceService;
 import com.axelor.studio.db.AppBudget;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
@@ -75,7 +76,8 @@ public class WorkflowVentilationBudgetServiceImpl extends WorkflowVentilationPro
       InvoiceFinancialDiscountService invoiceFinancialDiscountService,
       InvoiceTermService invoiceTermService,
       AppBudgetService appBudgetService,
-      BudgetInvoiceService budgetInvoiceService) {
+      BudgetInvoiceService budgetInvoiceService,
+      ContractVersionService contractVersionService) {
     super(
         accountConfigService,
         invoicePaymentRepo,
@@ -96,7 +98,8 @@ public class WorkflowVentilationBudgetServiceImpl extends WorkflowVentilationPro
         stockMoveLineRepository,
         appAccountService,
         invoiceFinancialDiscountService,
-        invoiceTermService);
+        invoiceTermService,
+        contractVersionService);
     this.appBudgetService = appBudgetService;
     this.budgetInvoiceService = budgetInvoiceService;
   }

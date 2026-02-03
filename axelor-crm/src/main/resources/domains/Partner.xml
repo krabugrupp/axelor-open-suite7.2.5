@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <domain-models xmlns="http://axelor.com/xml/ns/domain-models"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://axelor.com/xml/ns/domain-models http://axelor.com/xml/ns/domain-models/domain-models_7.1.xsd">
+  xsi:schemaLocation="http://axelor.com/xml/ns/domain-models http://axelor.com/xml/ns/domain-models/domain-models_7.4.xsd">
 
   <module name="base" package="com.axelor.apps.base.db"/>
 
   <entity name="Partner">
 
     <integer name="sizeSelect" title="Size" selection="crm.lead.size.select"/>
-    <integer name="leadScoringSelect" title="Lead scoring"
-      selection="gold.rating.icon.select"/>
+    <integer name="leadScoringSelect" title="Lead scoring"/>
     <boolean name="isPartner" title="crm.Partner"/>
     <boolean name="isKeyAccount" title="Key account" default="false"/>
     <many-to-one name="companyDepartment"
@@ -66,6 +65,7 @@
         <![CDATA[SELECT COUNT(*) FROM crm_opportunity WHERE crm_opportunity.partner = id AND crm_opportunity.opportunity_status = (SELECT studio_app_crm.closed_win_opportunity_status FROM studio_app_crm LIMIT 1)]]>
     </integer>
 
+
     <extra-code>
     <![CDATA[
 		//partner size select
@@ -80,6 +80,8 @@
 
     <track>
       <field name="partnerStatus"/>
+      <field name="isDoNotCall"/>
+      <field name="isDoNotEmail"/>
     </track>
   </entity>
 

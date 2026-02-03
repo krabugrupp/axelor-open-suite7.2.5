@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <object-views xmlns="http://axelor.com/xml/ns/object-views"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://axelor.com/xml/ns/object-views http://axelor.com/xml/ns/object-views/object-views_7.1.xsd">
+  xsi:schemaLocation="http://axelor.com/xml/ns/object-views http://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
 
   <grid name="employee-grid" title="Employee" model="com.axelor.apps.hr.db.Employee"
     orderBy="contactPartner.simpleFullName">
@@ -26,7 +26,7 @@
       form-view="partner-contact-form"/>
     <field name="managerUser" form-view="user-form" grid-view="user-grid"/>
     <field name="$employeeStatus" title="Employee status"
-      selection="hr.employee.employee.status.select" type="string"/>
+      selection="hr.employee.employee.status.select" type="string" widget="single-select"/>
     <field name="mainEmploymentContract.companyDepartment" form-view="company-department-form"
       grid-view="company-department-grid"/>
   </grid>
@@ -57,6 +57,10 @@
     </panel>
 
     <panel name="contactSBSPanel" colSpan="12" showIf="stepByStepSelect &lt; 5" sidebar="true">
+      <panel colSpan="12">
+        <field name="hrManager" colSpan="6" widget="InlineCheckbox"/>
+        <field name="external" colSpan="6" widget="InlineCheckbox"/>
+      </panel>
       <field name="contactPartner" colSpan="12"
         domain="self.employee = null AND (self.partnerTypeSelect = 2 OR self.isContact = true)"
         form-view="partner-contact-form" grid-view="partner-contact-grid" showTitle="false"
@@ -110,7 +114,7 @@
       <field name="maritalName" colSpan="4"/>
       <field name="dependentChildren" colSpan="4"/>
       <field name="maidenName" colSpan="4" hideIf="sexSelect!='F'"/>
-      <field name="socialSecurityNumber" colSpan="4" max="15" min="12"/>
+      <field name="socialSecurityNumber" colSpan="4"/>
       <field name="$employeeStatus" hidden="true"/>
     </panel>
 
@@ -136,11 +140,6 @@
           form-view="events-planning-form" grid-view="events-planning-grid"/>
         <field name="imposedDayEventsPlanning" canEdit="false" colSpan="4"
           form-view="events-planning-form" grid-view="events-planning-grid"/>
-      </panel>
-
-      <panel colSpan="12">
-        <field name="hrManager" colSpan="4" widget="InlineCheckbox"/>
-        <field name="external" colSpan="4" widget="InlineCheckbox"/>
       </panel>
     </panel>
     <!-- END OF Basic info -->
@@ -383,7 +382,7 @@
     </panel>
 
     <panel name="personalInfoPanel" title="Personal information" colSpan="12"
-      showIf="stepByStepSelect == 5" canCollapse="true" collapseIf="true">
+      showIf="stepByStepSelect == 5" canCollapse="true">
       <field name="birthDate" colSpan="4"/>
       <field name="maritalStatus" colSpan="4"/>
       <field name="sexSelect" colSpan="4"/>
@@ -398,7 +397,7 @@
       <field name="maritalName" colSpan="4"/>
       <field name="dependentChildren" colSpan="4"/>
       <field name="maidenName" colSpan="4" hideIf="sexSelect!='F'"/>
-      <field name="socialSecurityNumber" colSpan="4" max="15" min="12"/>
+      <field name="socialSecurityNumber" colSpan="4"/>
       <field name="bankDetails" colSpan="4" form-view="bank-details-form"
         grid-view="bank-details-grid" if="__config__.app.getApp('base')?.getManageMultiBanks()"
         if-module="axelor-cash-management" widget="SuggestBox"
@@ -415,7 +414,7 @@
     <panel-tabs name="mainPanelTab" showIf="stepByStepSelect == 5">
       <panel name="employmentContractsPanel" title="Employment contracts">
         <panel name="contractualInfoPanel" title="Contractual information" colSpan="12"
-          canCollapse="true" collapseIf="true">
+          canCollapse="true">
           <field name="hireDate" colSpan="4"
             onChange="action-employee-attrs-set-seniority-date"/>
           <field name="seniorityDate" colSpan="4"/>
@@ -568,6 +567,11 @@
           grid-view="employee-file-grid" form-view="file-form" colSpan="12"/>
       </panel>
 
+      <panel name="employmentAssetsPanel" title="Assets">
+        <field name="employeeAssetList" colSpan="12" form-view="employee-assets-employee-form" grid-view="employee-assets-employee-grid"/>
+      </panel>
+
+
       <panel name="medicalVisitPanel" title="Medical visit" colSpan="12"
         if="__config__.app.isApp('employee') &amp;&amp; __config__.app.getApp('employee')?.getIsMedicalVisitEnabled()">
         <panel-related field="medicalVisitList" showTitle="false"
@@ -657,7 +661,7 @@
   </form>
 
   <cards name="employee-card" title="Employee" model="com.axelor.apps.hr.db.Employee"
-    css="rect-image" orderBy="name">
+    css="rect-image" orderBy="contactPartner.simpleFullName">
     <toolbar>
       <button name="printEmployeePhoneBookBtn" title="Employee PhoneBook" icon="fa-print"
         onClick="action-print-employee-phonebook"/>
@@ -731,7 +735,8 @@
       expr="eval:__config__.app.getApp('leave')?.getAllowNegativeLeaveEmployees()"
       if="__config__.app.isApp('leave')"/>
     <field name="publicHolidayEventsPlanning"
-      expr="eval: __user__.activeCompany?.hrConfig?.publicHolidayEventsPlanning"/>
+      expr="eval: __user__.activeCompany?.publicHolidayEventsPlanning"/>
+    <field name="weeklyPlanning" expr="eval: __user__.activeCompany?.weeklyPlanning"/>
   </action-record>
 
   <action-record name="action-hr-record-reset-company-cb-details"

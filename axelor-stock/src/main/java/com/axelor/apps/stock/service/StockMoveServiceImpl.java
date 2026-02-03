@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -38,6 +38,7 @@ import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.stock.db.FreightCarrierMode;
 import com.axelor.apps.stock.db.Incoterm;
 import com.axelor.apps.stock.db.InventoryLine;
+import com.axelor.apps.stock.db.MassStockMove;
 import com.axelor.apps.stock.db.ShipmentMode;
 import com.axelor.apps.stock.db.StockConfig;
 import com.axelor.apps.stock.db.StockLocation;
@@ -64,6 +65,7 @@ import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -235,6 +237,34 @@ public class StockMoveServiceImpl implements StockMoveService {
     if (typeSelect == StockMoveRepository.TYPE_INCOMING) {
       stockMove.setIsWithReturnSurplus(company.getStockConfig().getIsWithReturnSurplus());
     }
+    return stockMove;
+  }
+
+  @Override
+  public StockMove createStockMove(
+      Address fromAddress,
+      Address toAddress,
+      Company company,
+      StockLocation fromStockLocation,
+      StockLocation toStockLocation,
+      LocalDate realDate,
+      LocalDate estimatedDate,
+      int typeSelect,
+      MassStockMove massStockMove)
+      throws AxelorException {
+    StockMove stockMove =
+        createStockMove(
+            fromAddress,
+            toAddress,
+            company,
+            fromStockLocation,
+            toStockLocation,
+            realDate,
+            estimatedDate,
+            null,
+            StockMoveRepository.TYPE_INTERNAL);
+    stockMove.setMassStockMove(massStockMove);
+
     return stockMove;
   }
 
@@ -566,6 +596,7 @@ public class StockMoveServiceImpl implements StockMoveService {
       throws AxelorException {
     sendMailForStockMove(stockMove, template);
   }
+
   /**
    * Generate and send mail. Throws exception if the template is not found or if there is an error
    * while generating the message.
@@ -786,6 +817,21 @@ public class StockMoveServiceImpl implements StockMoveService {
                 + stockMove.getStockMoveSeq()
                 + " )"));
     newStockMove.setExTaxTotal(stockMoveToolService.compute(newStockMove));
+    newStockMove.setShipmentMode(null);
+    newStockMove.setFreightCarrierMode(null);
+    newStockMove.setCarrierPartner(null);
+    newStockMove.setForwarderPartner(null);
+    newStockMove.setIncoterm(null);
+    newStockMove.setTrackingNumber(null);
+    newStockMove.setModeOfTransport(null);
+    newStockMove.setNumOfPackages(0);
+    newStockMove.setNumOfPalettes(0);
+    newStockMove.setGrossMass(BigDecimal.ZERO);
+    newStockMove.setIsIspmRequired(false);
+    newStockMove.setIsNeedingConformityCertificate(false);
+    newStockMove.setSignatoryUser(null);
+    newStockMove.setIsConformityCertifSigned(false);
+    newStockMove.setElectronicSignature(null);
 
     plan(newStockMove);
     newStockMove.setStockMoveOrigin(stockMove);
@@ -1026,8 +1072,9 @@ public class StockMoveServiceImpl implements StockMoveService {
       StockMove stockMove, BigDecimal splitQty, StockMoveLine moveLine, BigDecimal totalQty) {
     moveLine.setQty(splitQty);
     moveLine.setRealQty(splitQty);
+    moveLine.setTotalNetMass(moveLine.getNetMass().multiply(splitQty));
 
-    int limit = totalQty.divide(splitQty).intValue();
+    int limit = totalQty.divide(splitQty, RoundingMode.HALF_UP).intValue();
     for (int counter = 1; counter < limit; counter++) {
       copyLine(stockMove, moveLine, splitQty);
     }
@@ -1037,6 +1084,7 @@ public class StockMoveServiceImpl implements StockMoveService {
     StockMoveLine newLine = stockMoveLineRepo.copy(moveLine, false);
     newLine.setQty(remainder);
     newLine.setRealQty(remainder);
+    moveLine.setTotalNetMass(moveLine.getNetMass().multiply(remainder));
     stockMove.addStockMoveLineListItem(newLine);
   }
 
@@ -1113,20 +1161,23 @@ public class StockMoveServiceImpl implements StockMoveService {
       StockMoveLine modifiedStockMoveLine) {
 
     StockMoveLine newStockMoveLine = stockMoveLineRepo.copy(originalStockMoveLine, false);
-    newStockMoveLine.setQty(modifiedStockMoveLine.getQty());
-    newStockMoveLine.setRealQty(modifiedStockMoveLine.getQty());
+    BigDecimal netMass = originalStockMoveLine.getNetMass();
+    BigDecimal qty = modifiedStockMoveLine.getQty();
+    newStockMoveLine.setQty(qty);
+    newStockMoveLine.setRealQty(qty);
+    newStockMoveLine.setTotalNetMass(netMass.multiply(qty));
     newStockMoveLine.setUnitPriceUntaxed(modifiedStockMoveLine.getUnitPriceUntaxed());
 
     // Update quantity in original stock move.
     // If the remaining quantity is 0, remove the stock move line
-    BigDecimal remainingQty =
-        originalStockMoveLine.getQty().subtract(modifiedStockMoveLine.getQty());
+    BigDecimal remainingQty = originalStockMoveLine.getQty().subtract(qty);
     if (BigDecimal.ZERO.compareTo(remainingQty) == 0) {
       // Remove the stock move line
       originalStockMove.removeStockMoveLineListItem(originalStockMoveLine);
     } else {
       originalStockMoveLine.setQty(remainingQty);
       originalStockMoveLine.setRealQty(remainingQty);
+      originalStockMoveLine.setTotalNetMass(netMass.multiply(remainingQty));
     }
 
     return newStockMoveLine;

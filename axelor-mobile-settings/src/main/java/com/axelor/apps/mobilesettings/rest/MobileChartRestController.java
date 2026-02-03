@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,8 @@ package com.axelor.apps.mobilesettings.rest;
 import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.mobilesettings.db.MobileChart;
 import com.axelor.apps.mobilesettings.service.MobileChartResponseComputeService;
+import com.axelor.apps.mobilesettings.translation.MobileSettingsTranslation;
+import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
 import com.axelor.utils.api.HttpExceptionHandler;
 import com.axelor.utils.api.ObjectFinder;
@@ -53,7 +55,7 @@ public class MobileChartRestController {
 
     return ResponseConstructor.build(
         Response.Status.OK,
-        "Response of the query of the chart",
+        I18n.get(MobileSettingsTranslation.QUERY_RESPONSE_CHART),
         Beans.get(MobileChartResponseComputeService.class).computeMobileChartResponse(mobileChart));
   }
 }

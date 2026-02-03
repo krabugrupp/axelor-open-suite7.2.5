@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,9 @@ import com.axelor.apps.base.service.administration.SequenceService;
 import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.businessproject.exception.BusinessProjectExceptionMessage;
 import com.axelor.apps.businessproject.service.ProjectBusinessService;
-import com.axelor.apps.businessproject.service.ProjectTaskBusinessProjectService;
 import com.axelor.apps.businessproject.service.app.AppBusinessProjectService;
 import com.axelor.apps.businessproject.service.projectgenerator.ProjectGeneratorFactory;
+import com.axelor.apps.businessproject.service.projecttask.ProjectTaskBusinessProjectService;
 import com.axelor.apps.project.db.Project;
 import com.axelor.apps.project.db.ProjectTask;
 import com.axelor.apps.project.db.repo.ProjectRepository;
@@ -81,9 +81,10 @@ public class ProjectGeneratorFactoryTask implements ProjectGeneratorFactory {
 
   @Override
   @Transactional(rollbackOn = Exception.class)
-  public Project create(SaleOrder saleOrder) {
+  public Project create(SaleOrder saleOrder) throws AxelorException {
     Project project = projectBusinessService.generateProject(saleOrder);
     project.setIsBusinessProject(true);
+    project = projectRepository.save(project);
     try {
       if (!appProjectService.getAppProject().getGenerateProjectSequence()) {
         project.setCode(sequenceService.getDraftSequenceNumber(project));
@@ -91,7 +92,7 @@ public class ProjectGeneratorFactoryTask implements ProjectGeneratorFactory {
     } catch (AxelorException e) {
       TraceBackService.trace(e);
     }
-    return projectRepository.save(project);
+    return project;
   }
 
   @Override
@@ -121,8 +122,8 @@ public class ProjectGeneratorFactoryTask implements ProjectGeneratorFactory {
 
     return ActionView.define(String.format("Task%s generated", (tasks.size() > 1 ? "s" : "")))
         .model(ProjectTask.class.getName())
-        .add("grid", "project-task-grid")
-        .add("form", "project-task-form")
+        .add("grid", "business-project-task-grid")
+        .add("form", "business-project-task-form")
         .param("search-filters", "project-task-filters")
         .domain(String.format("self.id in (%s)", StringHelper.getIdListString(tasks)));
   }

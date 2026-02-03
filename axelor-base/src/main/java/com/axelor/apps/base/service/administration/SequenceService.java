@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -34,6 +34,8 @@ import com.axelor.db.EntityHelper;
 import com.axelor.db.JPA;
 import com.axelor.db.Model;
 import com.axelor.db.mapper.Mapper;
+import com.axelor.db.mapper.Property;
+import com.axelor.db.mapper.PropertyType;
 import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
 import com.axelor.meta.db.MetaSelectItem;
@@ -54,9 +56,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -74,6 +78,7 @@ public class SequenceService {
   protected static final String PATTERN_YEAR = "%YY";
   protected static final String PATTERN_MONTH = "%M";
   protected static final String PATTERN_FULL_MONTH = "%FM";
+  protected static final String PATTERN_FULL_DAY = "%FD";
   protected static final String PATTERN_DAY = "%D";
   protected static final String PATTERN_WEEK = "%WY";
   protected static final String PADDING_LETTER = "A";
@@ -170,25 +175,53 @@ public class SequenceService {
    * @param refDate
    * @return
    */
+  @SuppressWarnings({"unchecked", "rawtypes"})
   protected void isSequenceAlreadyExisting(
       Class objectClass, String fieldName, String nextSeq, Sequence seq) throws AxelorException {
     String table = objectClass.getSimpleName();
-    boolean isSequenceAlreadyExisting =
-        CollectionUtils.isNotEmpty(
-            JPA.em()
-                .createQuery(
-                    "SELECT self FROM " + table + " self WHERE " + fieldName + " = :nextSeq",
-                    objectClass)
-                .setParameter("nextSeq", nextSeq)
-                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-                .setFlushMode(FlushModeType.COMMIT)
-                .getResultList());
+    String baseQuery = "SELECT self FROM " + table + " self WHERE " + fieldName + " = :nextSeq";
+    String companyQuery = computeCompanyQuery(objectClass);
+
+    TypedQuery<?> query =
+        JPA.em()
+            .createQuery(baseQuery + companyQuery, objectClass)
+            .setParameter("nextSeq", nextSeq)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .setFlushMode(FlushModeType.COMMIT);
+
+    if (!StringUtils.isEmpty(companyQuery)) {
+      query.setParameter("company", seq.getCompany());
+    }
+
+    boolean isSequenceAlreadyExisting = CollectionUtils.isNotEmpty(query.getResultList());
     if (isSequenceAlreadyExisting) {
       throw new AxelorException(
           TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
           I18n.get(BaseExceptionMessage.SEQUENCE_ALREADY_EXISTS),
           nextSeq,
           seq.getFullName());
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  protected String computeCompanyQuery(Class objectClass) {
+    Property property =
+        Stream.of(Mapper.of(objectClass).getProperties())
+            .filter(p -> p.getTarget() == Company.class)
+            .findFirst()
+            .orElse(null);
+    if (property == null) {
+      return "";
+    }
+    PropertyType type = property.getType();
+    String name = property.getName();
+    switch (type) {
+      case MANY_TO_MANY:
+        return " AND :company MEMBER OF self." + name;
+      case ONE_TO_MANY:
+        return " AND EXISTS (SELECT c FROM self." + name + " c WHERE c = :company)";
+      default:
+        return " AND self." + name + " = :company";
     }
   }
 
@@ -207,6 +240,7 @@ public class SequenceService {
             .replace(PATTERN_YEAR, refDate.format(DateTimeFormatter.ofPattern("yy")))
             .replace(PATTERN_MONTH, Integer.toString(refDate.getMonthValue()))
             .replace(PATTERN_FULL_MONTH, refDate.format(DateTimeFormatter.ofPattern("MM")))
+            .replaceAll(PATTERN_FULL_DAY, refDate.format(DateTimeFormatter.ofPattern("dd")))
             .replace(PATTERN_DAY, Integer.toString(refDate.getDayOfMonth()))
             .replace(
                 PATTERN_WEEK, Integer.toString(refDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)));
@@ -583,6 +617,7 @@ public class SequenceService {
             .replace(PATTERN_YEAR, refDate.format(DateTimeFormatter.ofPattern("yy")))
             .replace(PATTERN_MONTH, Integer.toString(refDate.getMonthValue()))
             .replace(PATTERN_FULL_MONTH, refDate.format(DateTimeFormatter.ofPattern("MM")))
+            .replace(PATTERN_FULL_DAY, refDate.format(DateTimeFormatter.ofPattern("dd")))
             .replace(PATTERN_DAY, Integer.toString(refDate.getDayOfMonth()))
             .replace(
                 PATTERN_WEEK, Integer.toString(refDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)));

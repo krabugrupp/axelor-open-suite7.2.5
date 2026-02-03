@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <object-views xmlns="http://axelor.com/xml/ns/object-views"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://axelor.com/xml/ns/object-views http://axelor.com/xml/ns/object-views/object-views_7.1.xsd">
+  xsi:schemaLocation="http://axelor.com/xml/ns/object-views http://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
 
   <grid name="forecast-grid" title="Forecasts"
     model="com.axelor.apps.cash.management.db.Forecast">
     <field name="forecastSeq"/>
     <field name="company" if="__config__.app.getApp('base')?.getEnableMultiCompany()"/>
+    <field name="projectName"/>
     <field name="bankDetails"/>
     <field name="amount" aggregate="sum"/>
     <field name="typeSelect"/>
@@ -26,6 +27,10 @@
         if="__config__.app.getApp('base')?.getManageMultiBanks()"/>
       <field name="typeSelect"/>
       <field name="amount"/>
+      <field name="projectName"/>
+      <field name="projectStartDate"/>
+      <field name="projectEndDate"/>
+      <field name="projectActDate"/>
       <field name="estimatedDate"/>
       <field name="forecastRecapLineType" domain="self.elementSelect = 5"/>
       <field name="realizationDate"/>

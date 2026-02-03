@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -71,9 +71,10 @@ public class ProjectGeneratorFactorySubProject implements ProjectGeneratorFactor
 
   @Override
   @Transactional(rollbackOn = Exception.class)
-  public Project create(SaleOrder saleOrder) {
+  public Project create(SaleOrder saleOrder) throws AxelorException {
     Project project = projectBusinessService.generateProject(saleOrder);
     project.setIsBusinessProject(true);
+    project = projectRepository.save(project);
     try {
       if (!appProjectService.getAppProject().getGenerateProjectSequence()) {
         project.setCode(sequenceService.getDraftSequenceNumber(project));
@@ -81,7 +82,7 @@ public class ProjectGeneratorFactorySubProject implements ProjectGeneratorFactor
     } catch (AxelorException e) {
       TraceBackService.trace(e);
     }
-    return projectRepository.save(project);
+    return project;
   }
 
   @Override
@@ -127,7 +128,7 @@ public class ProjectGeneratorFactorySubProject implements ProjectGeneratorFactor
     return ActionView.define(String.format("Project%s generated", (projects.size() > 1 ? "s" : "")))
         .model(Project.class.getName())
         .add("grid", "project-grid")
-        .add("form", "project-form")
+        .add("form", "business-project-form")
         .param("search-filters", "project-filters")
         .domain(String.format("self.id in (%s)", StringHelper.getIdListString(projects)));
   }

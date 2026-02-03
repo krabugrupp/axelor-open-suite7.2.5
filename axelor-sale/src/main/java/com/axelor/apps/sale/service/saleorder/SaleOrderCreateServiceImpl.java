@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -37,6 +37,9 @@ import com.axelor.apps.sale.db.SaleOrderLine;
 import com.axelor.apps.sale.db.repo.SaleOrderLineRepository;
 import com.axelor.apps.sale.db.repo.SaleOrderRepository;
 import com.axelor.apps.sale.service.app.AppSaleService;
+import com.axelor.apps.sale.service.saleorderline.SaleOrderLineComputeService;
+import com.axelor.apps.sale.service.saleorderline.SaleOrderLinePriceService;
+import com.axelor.apps.sale.service.saleorderline.product.SaleOrderLineProductService;
 import com.axelor.auth.AuthUtils;
 import com.axelor.auth.db.User;
 import com.axelor.inject.Beans;
@@ -60,8 +63,11 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
   protected SaleOrderService saleOrderService;
   protected SaleOrderComputeService saleOrderComputeService;
   protected DMSService dmsService;
+  protected SaleOrderLineComputeService saleOrderLineComputeService;
+  protected SaleOrderLineProductService saleOrderLineProductService;
+  protected SaleOrderLinePriceService saleOrderLinePriceService;
+  protected SaleOrderDateService saleOrderDateService;
   protected SaleOrderLineRepository saleOrderLineRepository;
-  protected AddressService addressService;
 
   @Inject
   public SaleOrderCreateServiceImpl(
@@ -70,45 +76,19 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
       AppSaleService appSaleService,
       SaleOrderService saleOrderService,
       SaleOrderComputeService saleOrderComputeService,
-      DMSService dmsService,
-      SaleOrderLineRepository saleOrderLineRepository,
-      AddressService addressService) {
-
+      SaleOrderLineComputeService saleOrderLineComputeService,
+      SaleOrderLineProductService saleOrderLineProductService,
+      SaleOrderLinePriceService saleOrderLinePriceService,
+      SaleOrderDateService saleOrderDateService) {
     this.partnerService = partnerService;
     this.saleOrderRepo = saleOrderRepo;
     this.appSaleService = appSaleService;
     this.saleOrderService = saleOrderService;
     this.saleOrderComputeService = saleOrderComputeService;
-    this.dmsService = dmsService;
-    this.saleOrderLineRepository = saleOrderLineRepository;
-    this.addressService = addressService;
-  }
-
-  @Override
-  public SaleOrder createSaleOrder(Company company, Partner clientPartner) throws AxelorException {
-    SaleOrder saleOrder = new SaleOrder();
-    saleOrder.setCreationDate(appSaleService.getTodayDate(company));
-    if (company != null) {
-      saleOrder.setCompany(company);
-      saleOrder.setCurrency(company.getCurrency());
-    }
-    saleOrder.setSalespersonUser(AuthUtils.getUser());
-    saleOrder.setTeam(saleOrder.getSalespersonUser().getActiveTeam());
-    saleOrder.setStatusSelect(SaleOrderRepository.STATUS_DRAFT_QUOTATION);
-    saleOrderService.computeEndOfValidityDate(saleOrder);
-
-    if (clientPartner != null) {
-      saleOrder.setClientPartner(clientPartner);
-      saleOrder.setMainInvoicingAddress(partnerService.getInvoicingAddress(clientPartner));
-      saleOrder.setMainInvoicingAddressStr(
-          addressService.computeAddressStr(saleOrder.getMainInvoicingAddress()));
-      saleOrder.setDeliveryAddress(partnerService.getDeliveryAddress(clientPartner));
-      saleOrder.setDeliveryAddressStr(
-          addressService.computeAddressStr(saleOrder.getDeliveryAddress()));
-      saleOrder.setFiscalPosition(clientPartner.getFiscalPosition());
-    }
-
-    return saleOrder;
+    this.saleOrderLineComputeService = saleOrderLineComputeService;
+    this.saleOrderLineProductService = saleOrderLineProductService;
+    this.saleOrderLinePriceService = saleOrderLinePriceService;
+    this.saleOrderDateService = saleOrderDateService;
   }
 
   @Override
@@ -125,7 +105,8 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
       Team team,
       TaxNumber taxNumber,
       String internalNote,
-      FiscalPosition fiscalPosition)
+      FiscalPosition fiscalPosition,
+      TradingName tradingName)
       throws AxelorException {
     SaleOrder saleOrder =
         createSaleOrder(
@@ -141,9 +122,15 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
             team,
             taxNumber,
             fiscalPosition,
-            null);
+            tradingName);
     saleOrder.setInternalNote(internalNote);
+    saleOrder.setTradingName(tradingName);
     return saleOrder;
+  }
+
+  @Override
+  public SaleOrder createSaleOrder(User salespersonUser, Company company, Partner contactPartner, Currency currency, LocalDate estimatedShippingDate, String internalReference, String externalReference, PriceList priceList, Partner clientPartner, Team team, TaxNumber taxNumber, FiscalPosition fiscalPosition) throws AxelorException {
+    return SaleOrderCreateService.super.createSaleOrder(salespersonUser, company, contactPartner, currency, estimatedShippingDate, internalReference, externalReference, priceList, clientPartner, team, taxNumber, fiscalPosition);
   }
 
   @Override
@@ -214,9 +201,14 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
 
     saleOrder.setStatusSelect(SaleOrderRepository.STATUS_DRAFT_QUOTATION);
 
-    saleOrderService.computeEndOfValidityDate(saleOrder);
+    saleOrderDateService.computeEndOfValidityDate(saleOrder);
 
     return saleOrder;
+  }
+
+  @Override
+  public SaleOrder createSaleOrder(Company company, Partner clientPartner) throws AxelorException {
+    return null;
   }
 
   @Override
@@ -229,7 +221,7 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
     copy.setCurrency(wizardCurrency);
     copy.setPriceList(wizardPriceList);
 
-    saleOrderService.computeEndOfValidityDate(copy);
+    saleOrderDateService.computeEndOfValidityDate(copy);
 
     this.updateSaleOrderLineList(copy);
 
@@ -244,14 +236,13 @@ public class SaleOrderCreateServiceImpl implements SaleOrderCreateService {
   public void updateSaleOrderLineList(SaleOrder saleOrder) throws AxelorException {
     List<SaleOrderLine> saleOrderLineList = saleOrder.getSaleOrderLineList();
     if (saleOrderLineList != null) {
-      SaleOrderLineService saleOrderLineService = Beans.get(SaleOrderLineService.class);
       for (SaleOrderLine saleOrderLine : saleOrderLineList) {
         if (saleOrderLine.getProduct() != null) {
           if (!saleOrder.getTemplate()) {
-            saleOrderLineService.resetPrice(saleOrderLine);
+            saleOrderLinePriceService.resetPrice(saleOrderLine);
           }
-          saleOrderLineService.fillPrice(saleOrderLine, saleOrder);
-          saleOrderLineService.computeValues(saleOrder, saleOrderLine);
+          saleOrderLineProductService.fillPrice(saleOrderLine, saleOrder);
+          saleOrderLineComputeService.computeValues(saleOrder, saleOrderLine);
         }
       }
     }

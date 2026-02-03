@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,6 +28,7 @@ import com.axelor.apps.sale.db.SaleOrderLine;
 import com.axelor.apps.sale.db.repo.SaleOrderRepository;
 import com.axelor.apps.sale.service.saleorder.SaleOrderComputeService;
 import com.axelor.apps.sale.service.saleorder.SaleOrderCreateService;
+import com.axelor.apps.sale.service.saleorder.SaleOrderGeneratorService;
 import com.axelor.apps.supplychain.model.AnalyticLineModel;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -40,6 +41,7 @@ public class ContractSaleOrderGenerationImpl implements ContractSaleOrderGenerat
   protected SaleOrderCreateService saleOrderCreateService;
   protected SaleOrderComputeService saleOrderComputeService;
   protected AnalyticLineModelFromContractService analyticLineModelFromContractService;
+  protected SaleOrderGeneratorService saleOrderGeneratorService;
 
   @Inject
   public ContractSaleOrderGenerationImpl(
@@ -47,12 +49,14 @@ public class ContractSaleOrderGenerationImpl implements ContractSaleOrderGenerat
       SaleOrderRepository saleOrderRepository,
       SaleOrderCreateService saleOrderCreateService,
       SaleOrderComputeService saleOrderComputeService,
-      AnalyticLineModelFromContractService analyticLineModelFromContractService) {
+      AnalyticLineModelFromContractService analyticLineModelFromContractService,
+      SaleOrderGeneratorService saleOrderGeneratorService) {
     this.appBaseService = appBaseService;
     this.saleOrderRepository = saleOrderRepository;
     this.saleOrderCreateService = saleOrderCreateService;
     this.saleOrderComputeService = saleOrderComputeService;
     this.analyticLineModelFromContractService = analyticLineModelFromContractService;
+    this.saleOrderGeneratorService = saleOrderGeneratorService;
   }
 
   @Override
@@ -61,8 +65,9 @@ public class ContractSaleOrderGenerationImpl implements ContractSaleOrderGenerat
     Partner clientPartner = contract.getPartner();
 
     SaleOrder saleOrder =
-        saleOrderCreateService.createSaleOrder(contract.getCompany(), clientPartner);
-    saleOrder.setCurrency(contract.getCurrency());
+        saleOrderGeneratorService.createSaleOrder(
+            clientPartner, contract.getCompany(), null, contract.getCurrency(), null);
+
     saleOrder.setInvoicedPartner(contract.getInvoicedPartner());
     saleOrder.setPaymentMode(contract.getCurrentContractVersion().getPaymentMode());
     saleOrder.setPaymentCondition(contract.getInvoicedPartner().getPaymentCondition());

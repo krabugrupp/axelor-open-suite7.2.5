@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -85,6 +85,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
   @Inject protected PurchaseOrderPrintService purchaseOrderPrintService;
 
   @Inject protected PurchaseOrderSequenceService purchaseOrderSequenceService;
+
+  @Inject protected PurchaseOrderLineTaxService purchaseOrderLineTaxService;
 
   @Override
   public PurchaseOrder _computePurchaseOrderLines(PurchaseOrder purchaseOrder)
@@ -202,9 +204,12 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
   public void initPurchaseOrderLineTax(PurchaseOrder purchaseOrder) {
 
     if (purchaseOrder.getPurchaseOrderLineTaxList() == null) {
-      purchaseOrder.setPurchaseOrderLineTaxList(new ArrayList<PurchaseOrderLineTax>());
+      purchaseOrder.setPurchaseOrderLineTaxList(new ArrayList<>());
     } else {
+      List<PurchaseOrderLineTax> purchaseOrderLineTaxList =
+          purchaseOrderLineTaxService.getUpdatedPurchaseOrderLineTax(purchaseOrder);
       purchaseOrder.getPurchaseOrderLineTaxList().clear();
+      purchaseOrder.getPurchaseOrderLineTaxList().addAll(purchaseOrderLineTaxList);
     }
   }
 
@@ -290,7 +295,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                   purchaseOrder.getCurrency(),
                   purchaseOrder.getCompany().getCurrency(),
                   lastPurchasePrice,
-                  currencyService.getDateToConvert(null));
+                  appPurchaseService.getTodayDate(purchaseOrder.getCompany()));
 
           productCompanyService.set(
               product, "lastPurchasePrice", lastPurchasePrice, purchaseOrder.getCompany());

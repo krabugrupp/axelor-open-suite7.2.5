@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -130,7 +130,7 @@ public class ExcelToCSV {
                     break;
 
                   case Cell.CELL_TYPE_BOOLEAN:
-                    value = new Boolean(dataCell.getBooleanCellValue()).toString();
+                    value = Boolean.valueOf(dataCell.getBooleanCellValue()).toString();
                     break;
                   case Cell.CELL_TYPE_BLANK:
                   default:

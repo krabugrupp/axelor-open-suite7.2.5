@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <object-views xmlns="http://axelor.com/xml/ns/object-views"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://axelor.com/xml/ns/object-views http://axelor.com/xml/ns/object-views/object-views_7.1.xsd">
+  xsi:schemaLocation="http://axelor.com/xml/ns/object-views http://axelor.com/xml/ns/object-views/object-views_7.4.xsd">
 
   <grid name="purchase-order-line-purchase-order-grid" title="PO lines"
     model="com.axelor.apps.purchase.db.PurchaseOrderLine">
@@ -53,6 +53,9 @@
 
   <grid model="com.axelor.apps.purchase.db.PurchaseOrderLine" title="PO lines"
     name="purchase-order-line-grid" canNew="false" canDelete="false" canEdit="false">
+    <field name="$hasWarning" hidden="true"/>
+    <button name="errorIconButton" showIf="$hasWarning" onClick="refresh" readonlyIf="true"
+      icon="fa-exclamation-triangle"/>
     <field name="purchaseOrder.purchaseOrderSeq" width="120"/>
     <field name="purchaseOrder.supplierPartner" form-view="partner-form"
       grid-view="partner-grid"/>
@@ -133,6 +136,12 @@
             <![CDATA[<>{$partnerLanguage && <Badge bg="warning">{_t("The partner's language is different from the current language. Description and product name are in :")} {$partnerLanguage}</Badge>}</>]]>
           </viewer>
         </field>
+        <field name="$unitWarningMessage" hidden="true" readonly="true" colSpan="12"
+          showTitle="false">
+          <viewer>
+            <![CDATA[<><Badge bg="warning">{_t("The supplier catalog's unit is different from the current unit.")}</Badge></>]]>
+          </viewer>
+        </field>
         <label name="differentSupplierLabel" hidden="true" colSpan="12"/>
         <field name="receiptState" showTitle="false" colSpan="3" showIf="receiptState > 0"
           if-module="axelor-supplychain" if="__config__.app.isApp('supplychain')">
@@ -145,7 +154,7 @@
 	          ]]></viewer>
         </field>
         <spacer name="receiptStateSpacer" if="__config__.app.isApp('supplychain')"/>
-        <field name="product" canEdit="false"
+        <field name="product" canEdit="false" x-image-field="picture"
           onChange="action-group-purchase-purchase-orderline-product-onchange"
           onSelect="action-purchase-order-line-attrs-product-domain" form-view="product-form"
           grid-view="product-purchase-grid"/>
@@ -161,7 +170,8 @@
           <field name="qty" onChange="action-group-purchase-purchase-orderline-qty-onchange"
             colSpan="3" validIf="$qtyValid != false"/>
           <field name="unit" colSpan="3" canEdit="false" form-view="unit-form"
-            grid-view="unit-grid" requiredIf="!isTitleLine"/>
+            grid-view="unit-grid" requiredIf="!isTitleLine"
+            onChange="action-purchase-order-line-attrs-display-different-unit-message"/>
           <panel name="pricePanel" colSpan="3">
             <field name="price" hidden="true" colSpan="12"
               onChange="action-purchase-order-line-method-onchange-price,action-purchase-order-line-method-compute,action-purchase-order-line-method-compute-analytic-distribution">
@@ -185,7 +195,7 @@
             hideIf="discountTypeSelect == 3"/>
           <field name="priceDiscounted" colSpan="3" readonly="true" hidden="true"/>
         </panel>
-        <field name="taxLineSet" canEdit="false"
+        <field name="taxLineSet" canEdit="false" canNew="false"
           onChange="action-group-purchase-purchase-orderline-taxline-onchange"
           domain="self.endDate = null or self.endDate &gt; :__date__" grid-view="tax-line-grid"
           form-view="tax-line-form" widget="TagSelect"/>
@@ -206,8 +216,17 @@
       <panel name="supplierRequestsPanel" title="Suppliers requests"
         if-module="axelor-supplier-management"
         if="__config__.app.getApp('purchase')?.getSupplierRequestMgt()">
+        <field name="$isPoSaved" showTitle="false" colSpan="12" readonly="true"
+          showIf="!$isPoSaved">
+          <viewer>
+            <![CDATA[
+                     <><Badge bg="warning">{_t("You can not generate supplier requests if the order is not saved.")}</Badge></>
+            ]]>
+          </viewer>
+        </field>
         <button name="generateSuppliersRequestsBtn" title="Generate suppliers requests"
-          onClick="action-group-purchase-purchase-orderline-generate-supplierreq-click"/>
+          onClick="action-group-purchase-purchase-orderline-generate-supplierreq-click"
+          readonlyIf="!$isPoSaved"/>
         <field name="supplierPartner" form-view="partner-form" grid-view="partner-grid"
           onSelect="action-purchase-order-line-set-supplierPartner-domain"/>
         <panel-related name="purchaseOrderSupplierLineListPanel"
@@ -219,6 +238,13 @@
         action="action-purchase-order-line-view-show-order-line-history" colSpan="12"/>
       <panel name="deliveryPanel" title="Delivery" hidden="true" colSpan="12">
         <panel name="deliveryDatePanel" colSpan="12">
+          <field name="stockLocation" form-view="stock-location-form"
+            grid-view="stock-location-grid" if-module="axelor-supplychain"
+            if="__config__.app.isApp('supplychain')"
+            onSelect="action-purchase-order-line-attrs-set-stock-location-domain"/>
+          <field name="stockLocation.address" form-view="address-form"
+            grid-view="address-grid" if-module="axelor-supplychain"
+            if="__config__.app.isApp('supplychain')"/>
           <field name="desiredReceiptDate"/>
           <field name="estimatedReceiptDate"/>
         </panel>
@@ -239,7 +265,7 @@
         if="__config__.app.isApp('business-project') &amp;&amp; __config__.app.getApp('business-project').getProjectPurchaseOrderLines()"
         title="Business Project" if-module="axelor-business-project">
         <field name="project" domain="self.isBusinessProject = true" title="Business Project"
-          requiredIf="toInvoice &amp;&amp; !isTitleLine" form-view="project-form"
+          requiredIf="toInvoice &amp;&amp; !isTitleLine" form-view="business-project-form"
           grid-view="project-grid" canEdit="false"/>
         <field name="toInvoice"
           if="__config__.app.isApp('business-project') &amp;&amp; __config__.app.getApp('business-project').getProjectPurchaseOrderLines()"
@@ -251,7 +277,8 @@
           </viewer>
         </field>
         <field name="projectTask" title="Project Task" domain="self.project = :project"
-          form-view="project-task-form" grid-view="project-task-grid" canEdit="false"/>
+          form-view="business-project-task-form" grid-view="business-project-task-grid"
+          canEdit="false"/>
       </panel>
     </panel-tabs>
     <panel name="attrsPanel">
@@ -276,7 +303,7 @@
 
   <form model="com.axelor.apps.purchase.db.PurchaseOrderLine" title="PO line"
     name="purchase-order-line-all-form" width="large" canNew="false" canDelete="false"
-    canEdit="false">
+    canEdit="false" onLoad="action-group-purchase-purchase-orderline-onload">
     <panel name="mainPanel">
       <field name="purchaseOrder.company" colSpan="3"/>
       <spacer name="purchaseOrderCompanySpacer" colSpan="9"/>
@@ -330,6 +357,7 @@
     <action name="action-purchase-order-line-attrs-hide-different-supplier-warning-label"/>
     <action name="action-purchase-order-line-attrs-display-different-language-message"/>
     <action name="action-purchase-order-line-record-init-dummy-fields"/>
+    <action name="action-purchase-order-attrs-is-po-saved"/>
   </action-group>
 
   <action-group name="action-group-purchase-purchase-orderline-onload">
@@ -343,6 +371,8 @@
     <action name="action-purchase-order-line-attrs-set-isFilterOnSupplier"/>
     <action name="action-purchase-order-line-attrs-set-currency"/>
     <action name="action-purchase-order-line-attrs-display-different-language-message"/>
+    <action name="action-purchase-order-line-attrs-display-different-unit-message"/>
+    <action name="action-purchase-order-attrs-is-po-saved"/>
   </action-group>
 
   <action-group name="action-group-purchase-purchase-orderline-product-onchange">
@@ -353,6 +383,7 @@
     <action name="action-purchase-order-line-method-check-different-supplier"/>
     <action name="action-purchase-order-line-method-translate-product-description-and-name"/>
     <action name="action-purchase-order-line-attrs-refresh-order-history-dashlet"/>
+    <action name="action-purchase-order-line-attrs-display-different-unit-message"/>
   </action-group>
 
   <action-group name="action-group-purchase-purchase-orderline-qty-onchange">
@@ -365,6 +396,7 @@
 
   <action-group
     name="action-group-purchase-purchase-orderline-generate-supplierreq-click">
+    <action name="action-purchase-order-validate-check-product"/>
     <action name="save"/>
     <action name="action-purchase-order-line-method-generate-suppliers-requests"/>
     <action name="save"/>
@@ -435,11 +467,11 @@
 
   <action-attrs name="action-purchase-order-line-attrs-product-domain">
     <attribute name="domain" for="product"
-      if="!__config__.app.getApp('purchase')?.enablePurchasesProductByTradName || _parent?.company?.tradingNameSet == null || _parent?.company?.tradingNameSet.isEmpty()"
+      if="!__config__.app.getApp('purchase')?.enablePurchasesProductByTradName || _parent?.company?.tradingNameList == null || _parent?.company?.tradingNameList.isEmpty()"
       expr="eval: &quot; self.isModel = false and self.expense = false and (self.endDate = null or self.endDate &gt; :__date__) and self.purchasable = true and self.dtype = 'Product'&quot;
 			+ (isFilterOnSupplier &amp;&amp; __config__.app.getApp('purchase')?.getManageSupplierCatalog() ? &quot; and self.id IN (SELECT product.id FROM SupplierCatalog WHERE supplierPartner.id = ${__parent__?.supplierPartner?.id})&quot; : &quot;&quot;)
       + (__config__.app.getApp('base')?.getCompanySpecificProductFieldsSet()?.find({it.name == 'purchasable'}) ? &quot; and (SELECT purchasable FROM ProductCompany productCompany WHERE productCompany.product.id = self.id AND productCompany.company.id = ${__parent__ ? __parent__.company.id : purchaseOrder.company.id}) IS TRUE&quot; : &quot;&quot;)
-			+ (__config__.app.getApp('purchase')?.enablePurchasesProductByTradName &amp;&amp; _parent?.company?.tradingNameSet != null &amp;&amp; !_parent?.company?.tradingNameSet.isEmpty() ? &quot; and ${_parent?.tradingName?.id} member of self.tradingNameBuyerSet &quot; : &quot;&quot;)"/>
+			+ (__config__.app.getApp('purchase')?.enablePurchasesProductByTradName &amp;&amp; _parent?.company?.tradingNameList != null &amp;&amp; !_parent?.company?.tradingNameList.isEmpty() ? &quot; and ${_parent?.tradingName?.id} member of self.tradingNameBuyerSet &quot; : &quot;&quot;)"/>
   </action-attrs>
 
   <action-attrs name="action-purchase-order-line-attrs-discountamount-title">
@@ -527,6 +559,7 @@
   <action-record name="action-purchase-order-line-record-new"
     model="com.axelor.apps.purchase.db.PurchaseOrderLine">
     <field name="qty" expr="eval: 1"/>
+    <field name="stockLocation" expr="eval: __parent__?.stockLocation"/>
     <field name="desiredReceiptDate" expr="eval: __parent__?.estimatedReceiptDate"/>
     <field name="$isFilterOnSupplier" expr="eval: true"/>
     <field name="estimatedReceiptDate" expr="eval: __parent__?.estimatedReceiptDate"
@@ -619,5 +652,22 @@
       expr="eval: __config__.app.getNbDecimalDigitForUnitPrice()"/>
     <field name="$nbDecimalDigitForQty" expr="eval: __config__.app.getNbDecimalDigitForQty()"/>
   </action-record>
+
+  <action-attrs name="action-purchase-order-attrs-is-po-saved">
+    <attribute for="$isPoSaved" name="value" expr="eval: __parent__?.id != null"/>
+  </action-attrs>
+
+  <action-validate name="action-purchase-order-validate-check-product">
+    <error message="Please select a product." if="product == null"/>
+  </action-validate>
+
+  <search-filters name="purchase-order-line-filters"
+    model="com.axelor.apps.purchase.db.PurchaseOrderLine" title="Purchases order line filters"/>
+
+  <action-method
+    name="action-purchase-order-line-attrs-display-different-unit-message">
+    <call class="com.axelor.apps.purchase.web.PurchaseOrderLineController"
+      method="differentUnitMessage"/>
+  </action-method>
 
 </object-views>

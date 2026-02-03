@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,14 +19,11 @@
 package com.axelor.apps.sale.service.saleorder;
 
 import com.axelor.apps.base.AxelorException;
-import com.axelor.apps.base.db.Company;
 import com.axelor.apps.base.db.Product;
 import com.axelor.apps.base.db.repo.TraceBackRepository;
-import com.axelor.apps.base.service.DurationService;
 import com.axelor.apps.base.service.address.AddressService;
 import com.axelor.apps.base.service.app.AppBaseService;
 import com.axelor.apps.base.service.currency.CurrencyConversionFactory;
-import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.sale.db.ComplementaryProduct;
 import com.axelor.apps.sale.db.Pack;
 import com.axelor.apps.sale.db.PackLine;
@@ -39,6 +36,11 @@ import com.axelor.apps.sale.db.repo.SaleOrderRepository;
 import com.axelor.apps.sale.exception.SaleExceptionMessage;
 import com.axelor.apps.sale.service.app.AppSaleService;
 import com.axelor.apps.sale.service.config.SaleConfigService;
+import com.axelor.apps.sale.service.saleorderline.SaleOrderLineComputeService;
+import com.axelor.apps.sale.service.saleorderline.SaleOrderLineDiscountService;
+import com.axelor.apps.sale.service.saleorderline.creation.SaleOrderLineCreateService;
+import com.axelor.apps.sale.service.saleorderline.pack.SaleOrderLinePackService;
+import com.axelor.apps.sale.service.saleorderline.product.SaleOrderLineComplementaryProductService;
 import com.axelor.common.ObjectUtils;
 import com.axelor.common.StringUtils;
 import com.axelor.db.JPA;
@@ -60,7 +62,6 @@ import wslite.json.JSONException;
 
 public class SaleOrderServiceImpl implements SaleOrderService {
 
-  protected SaleOrderLineService saleOrderLineService;
   protected AppBaseService appBaseService;
   protected SaleOrderLineRepository saleOrderLineRepo;
   protected SaleOrderRepository saleOrderRepo;
@@ -68,18 +69,24 @@ public class SaleOrderServiceImpl implements SaleOrderService {
   protected SaleOrderMarginService saleOrderMarginService;
   protected SaleConfigService saleConfigService;
   protected SaleOrderLineCreateService saleOrderLineCreateService;
+  protected SaleOrderLineComplementaryProductService saleOrderLineComplementaryProductService;
+  protected SaleOrderLinePackService saleOrderLinePackService;
+  protected SaleOrderLineDiscountService saleOrderLineDiscountService;
+  protected SaleOrderLineComputeService saleOrderLineComputeService;
 
   @Inject
   public SaleOrderServiceImpl(
-      SaleOrderLineService saleOrderLineService,
       AppBaseService appBaseService,
       SaleOrderLineRepository saleOrderLineRepo,
       SaleOrderRepository saleOrderRepo,
       SaleOrderComputeService saleOrderComputeService,
       SaleOrderMarginService saleOrderMarginService,
       SaleConfigService saleConfigService,
-      SaleOrderLineCreateService saleOrderLineCreateService) {
-    this.saleOrderLineService = saleOrderLineService;
+      SaleOrderLineCreateService saleOrderLineCreateService,
+      SaleOrderLineComplementaryProductService saleOrderLineComplementaryProductService,
+      SaleOrderLinePackService saleOrderLinePackService,
+      SaleOrderLineDiscountService saleOrderLineDiscountService,
+      SaleOrderLineComputeService saleOrderLineComputeService) {
     this.appBaseService = appBaseService;
     this.saleOrderLineRepo = saleOrderLineRepo;
     this.saleOrderRepo = saleOrderRepo;
@@ -87,6 +94,10 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     this.saleOrderMarginService = saleOrderMarginService;
     this.saleConfigService = saleConfigService;
     this.saleOrderLineCreateService = saleOrderLineCreateService;
+    this.saleOrderLineComplementaryProductService = saleOrderLineComplementaryProductService;
+    this.saleOrderLinePackService = saleOrderLinePackService;
+    this.saleOrderLineDiscountService = saleOrderLineDiscountService;
+    this.saleOrderLineComputeService = saleOrderLineComputeService;
   }
 
   @Override
@@ -103,20 +114,6 @@ public class SaleOrderServiceImpl implements SaleOrderService {
                 && saleOrder.getVersionNumber() > 1)
             ? "-V" + saleOrder.getVersionNumber()
             : "");
-  }
-
-  @Override
-  public SaleOrder computeEndOfValidityDate(SaleOrder saleOrder) {
-    Company company = saleOrder.getCompany();
-    if (saleOrder.getDuration() == null && company != null && company.getSaleConfig() != null) {
-      saleOrder.setDuration(company.getSaleConfig().getDefaultValidityDuration());
-    }
-    if (saleOrder.getCreationDate() != null) {
-      saleOrder.setEndOfValidityDate(
-          Beans.get(DurationService.class)
-              .computeDuration(saleOrder.getDuration(), saleOrder.getCreationDate()));
-    }
-    return saleOrder;
   }
 
   @Override
@@ -164,7 +161,7 @@ public class SaleOrderServiceImpl implements SaleOrderService {
   @Override
   @Transactional(rollbackOn = Exception.class)
   public SaleOrder addPack(SaleOrder saleOrder, Pack pack, BigDecimal packQty)
-      throws AxelorException {
+      throws AxelorException, MalformedURLException, JSONException {
 
     List<PackLine> packLineList = pack.getComponents();
     if (ObjectUtils.isEmpty(packLineList)) {
@@ -181,25 +178,21 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     BigDecimal conversionRate = BigDecimal.valueOf(1.00);
     if (pack.getCurrency() != null
         && !pack.getCurrency().getCodeISO().equals(saleOrder.getCurrency().getCodeISO())) {
-      try {
-        conversionRate =
-            Beans.get(CurrencyConversionFactory.class)
-                .getCurrencyConversionService()
-                .convert(pack.getCurrency(), saleOrder.getCurrency());
-      } catch (MalformedURLException | JSONException | AxelorException e) {
-        TraceBackService.trace(e);
-      }
+      conversionRate =
+          Beans.get(CurrencyConversionFactory.class)
+              .getCurrencyConversionService()
+              .convert(pack.getCurrency(), saleOrder.getCurrency());
     }
 
     if (Boolean.FALSE.equals(pack.getDoNotDisplayHeaderAndEndPack())) {
-      if (saleOrderLineService.getPackLineTypes(packLineList) == null
-          || !saleOrderLineService
+      if (saleOrderLinePackService.getPackLineTypes(packLineList) == null
+          || !saleOrderLinePackService
               .getPackLineTypes(packLineList)
               .contains(PackLineRepository.TYPE_START_OF_PACK)) {
         sequence++;
       }
       soLines =
-          saleOrderLineService.createNonStandardSOLineFromPack(
+          saleOrderLinePackService.createNonStandardSOLineFromPack(
               pack, saleOrder, packQty, soLines, sequence);
     }
 
@@ -222,13 +215,9 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     }
 
     if (soLines != null && !soLines.isEmpty()) {
-      try {
-        saleOrder = saleOrderComputeService.computeSaleOrder(saleOrder);
-        saleOrderMarginService.computeMarginSaleOrder(saleOrder);
-      } catch (AxelorException e) {
-        TraceBackService.trace(e);
-      }
-
+      saleOrderLineComputeService.computeLevels(saleOrder.getSaleOrderLineList(), null);
+      saleOrder = saleOrderComputeService.computeSaleOrder(saleOrder);
+      saleOrderMarginService.computeMarginSaleOrder(saleOrder);
       saleOrderRepo.save(saleOrder);
     }
     return saleOrder;
@@ -240,12 +229,12 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     if (saleOrderLineList != null) {
       for (SaleOrderLine saleOrderLine : saleOrderLineList) {
         BigDecimal maxDiscountAuthorized =
-            saleOrderLineService.computeMaxDiscount(saleOrder, saleOrderLine);
+            saleOrderLineDiscountService.computeMaxDiscount(saleOrder, saleOrderLine);
         if (saleOrderLine.getDiscountDerogation() != null && maxDiscountAuthorized != null) {
           maxDiscountAuthorized = saleOrderLine.getDiscountDerogation().max(maxDiscountAuthorized);
         }
         if (maxDiscountAuthorized != null
-            && saleOrderLineService.isSaleOrderLineDiscountGreaterThanMaxDiscount(
+            && saleOrderLineDiscountService.isSaleOrderLineDiscountGreaterThanMaxDiscount(
                 saleOrderLine, maxDiscountAuthorized)) {
           throw new AxelorException(
               TraceBackRepository.CATEGORY_INCONSISTENCY,
@@ -345,12 +334,12 @@ public class SaleOrderServiceImpl implements SaleOrderService {
           continue;
         }
         newComplementarySOLines.addAll(
-            saleOrderLineService.manageComplementaryProductSaleOrderLine(
+            saleOrderLineComplementaryProductService.manageComplementaryProductSaleOrderLine(
                 complementaryProduct, saleOrder, saleOrderLine));
       } else {
         for (SaleOrderLine saleOrderLine : saleOrderLineList) {
           newComplementarySOLines.addAll(
-              saleOrderLineService.manageComplementaryProductSaleOrderLine(
+              saleOrderLineComplementaryProductService.manageComplementaryProductSaleOrderLine(
                   complementaryProduct, saleOrder, saleOrderLine));
         }
       }

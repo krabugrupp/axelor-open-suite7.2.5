@@ -1,7 +1,7 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2005-2024 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2025 Axelor (<http://axelor.com>).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,7 +26,6 @@ import com.axelor.apps.account.db.Move;
 import com.axelor.apps.account.db.MoveLine;
 import com.axelor.apps.account.db.Tax;
 import com.axelor.apps.account.db.TaxLine;
-import com.axelor.apps.account.db.repo.AccountConfigRepository;
 import com.axelor.apps.account.db.repo.AccountingBatchRepository;
 import com.axelor.apps.account.db.repo.AnalyticMoveLineRepository;
 import com.axelor.apps.account.db.repo.JournalTypeRepository;
@@ -440,7 +439,7 @@ public class AccountingCutOffServiceImpl implements AccountingCutOffService {
             cutOffMoveLine.setCurrencyAmount(currencyAmount.abs());
           } else {
             cutOffMoveLine.setCredit(cutOffMoveLine.getCredit().add(convertedAmount));
-            currencyAmount = moveToolService.computeCurrencyAmountSign(currencyAmount, false);
+            currencyAmount = moveLineToolService.computeCurrencyAmountSign(currencyAmount, false);
             cutOffMoveLine.setCurrencyAmount(currencyAmount);
           }
 
@@ -618,7 +617,7 @@ public class AccountingCutOffServiceImpl implements AccountingCutOffService {
               null);
       boolean isDebit = productMoveLine.getDebit().signum() > 0;
 
-      currencyTaxAmount = moveToolService.computeCurrencyAmountSign(currencyTaxAmount, isDebit);
+      currencyTaxAmount = moveLineToolService.computeCurrencyAmountSign(currencyTaxAmount, isDebit);
 
       Integer vatSystem =
           taxAccountToolService.calculateVatSystem(
@@ -695,11 +694,6 @@ public class AccountingCutOffServiceImpl implements AccountingCutOffService {
 
   protected void getAndComputeAnalyticDistribution(
       Product product, Move move, MoveLine moveLine, boolean isPurchase) throws AxelorException {
-
-    if (accountConfigService.getAccountConfig(move.getCompany()).getAnalyticDistributionTypeSelect()
-        == AccountConfigRepository.DISTRIBUTION_TYPE_FREE) {
-      return;
-    }
 
     AnalyticDistributionTemplate analyticDistributionTemplate =
         analyticMoveLineService.getAnalyticDistributionTemplate(
