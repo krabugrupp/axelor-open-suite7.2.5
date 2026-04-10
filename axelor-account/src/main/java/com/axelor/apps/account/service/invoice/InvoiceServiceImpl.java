@@ -393,6 +393,7 @@ public class InvoiceServiceImpl extends InvoiceRepository implements InvoiceServ
     List<Integer> authorizedStatus = new ArrayList<>();
     authorizedStatus.add(InvoiceRepository.STATUS_DRAFT);
     authorizedStatus.add(InvoiceRepository.STATUS_VALIDATED);
+    authorizedStatus.add(InvoiceRepository.STATUS_VENTILATED);
     if (invoice.getStatusSelect() == null
         || !authorizedStatus.contains(invoice.getStatusSelect())) {
       throw new AxelorException(

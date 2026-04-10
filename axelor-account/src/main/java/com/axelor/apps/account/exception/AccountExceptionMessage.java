@@ -1087,7 +1087,7 @@ public final class AccountExceptionMessage {
   public static final String INVOICE_VENTILATE_WRONG_STATUS = /*$$(*/
       "You can only ventilate a validated invoice" /*)*/;
   public static final String INVOICE_CANCEL_WRONG_STATUS = /*$$(*/
-      "You can only cancel a drafted or validated invoice." /*)*/;
+          "You can only cancel a drafted, validated or ventilated invoice." /*)*/;
   public static final String INVOICE_DRAFT_WRONG_STATUS = /*$$(*/
       "You can only return to the draft status from a cancelled invoice." /*)*/;
 
